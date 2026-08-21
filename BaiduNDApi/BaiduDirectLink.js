@@ -1,80 +1,71 @@
-// baidu_direct_link.js
-const axios = require('axios');
+import fs from 'fs';
 
-class BaiduPan {
-  /**
-   * @param {string} accessToken - 百度网盘 access_token，需提前获取
-   * @param {string} [userAgent] - 自定义User-Agent，可选
-   */
-  constructor(accessToken, userAgent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36') {
-    this.accessToken = accessToken;
-    this.userAgent = userAgent;
-    this.baseUrl = 'https://pan.baidu.com/rest/2.0/xpan/multimedia';
-  }
+export default function BaiduPan(accessToken) {
 
-  /**
-   * 获取文件元数据（含直链）
-   * @param {number[]} fidList - 文件fs_id数组
-   * @param {number} [maxRetry=1] - token失效后重试次数
-   * @returns {Promise<Array>} 文件信息列表，每个元素包含:
-   *   { server_filename, size, dlink, fs_id, isdir, ... }
-   * @throws {Error} 当请求失败或token无效时抛出
-   */
-  async getFileMetas(fidList, maxRetry = 1) {
-    if (!this.accessToken) throw new Error('access_token 不能为空');
-    if (!fidList || !fidList.length) throw new Error('fidList 不能为空');
+  if (!accessToken) throw new Error('no access_token!!');
+  var BD_Headers = fs.readFileSync(new URL('./BD_Headers.json', import.meta.url), 'utf-8');
+  var BD_Headers = JSON.parse(BD_Headers);
+  // const BD_Cookies = fs.readFileSync(new URL('./cookies.txt', import.meta.url), 'utf-8');
+  // BD_Headers['cookie'] = BD_Cookies;
+  console.log('BD_Headers:', BD_Headers);
+
+  async function getFileMetas(fidList, maxRetry = 1) {
+    if (!fidList || !fidList.length) throw new Error('not valid fidList');
 
     const fsids = encodeURIComponent(JSON.stringify(fidList));
-    const url = `${this.baseUrl}?method=filemetas&app_id=250528&fsids=${fsids}&access_token=${this.accessToken}`;
+    const url = `https://pan.baidu.com/rest/2.0/xpan/multimedia?method=filemetas&dlink=1&fsids=${fsids}&access_token=${accessToken}`;
 
     try {
-      const response = await axios.get(url, {
-        headers: { 'User-Agent': this.userAgent },
-        timeout: 10000,
-      });
-      const data = response.data;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 20000);
 
-      // 处理百度返回码
+      const response = await fetch(url, {
+        headers: BD_Headers,
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`HTTP request error: ${response.status} - ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
       if (data.errno === 0) {
-        return data.list || []; // Success and return data
+        return data.list || [];
       } else if (data.errno === 112) {
-        throw new Error('页面已过期，请刷新或重新获取 access_token');
+        throw new Error('the page is expired,please refresh');
       } else if (data.errno === 9019) {
-        // token无效，尝试刷新（原脚本通过再次获取token，但这里我们直接抛出，由上层重新设置token）
         if (maxRetry > 0) {
-          // 若调用者传入新的token，可再次调用，但这里我们只抛出错误提示
-          throw new Error('access_token 无效或已过期，请重新获取');
+          throw new Error('please refresh the access_token because it is invalid or expired');
         } else {
-          throw new Error(`获取失败，errno=${data.errno}`);
+          throw new Error(`Failed to retrieve, errno=${data.errno}`);
         }
       } else {
-        throw new Error(`百度接口返回错误，errno=${data.errno}, msg=${data.msg || ''}`);
+        throw new Error(`Baidu API returned error, errno=${data.errno}, msg=${data.msg || ''}`);
       }
     } catch (error) {
-      if (error.response) {
-        throw new Error(`HTTP request error: ${error.response.status} - ${error.response.statusText}`);
+      if (error.name === 'AbortError') {
+        throw new Error('Request timeout');
       }
       throw error;
     }
   }
 
-  /**
-   * 获取直链列表（便于直接使用）
-   * @param {number[]} fidList - 文件fs_id数组
-   * @returns {Promise<Array>} 每个元素包含 { filename, size, dlink, fs_id }
-   */
-  async getDirectLinks(fidList) {
-    const list = await this.getFileMetas(fidList);
-    // 过滤掉文件夹（isdir=1），只返回文件
-    const files = list.filter(item => item.isdir !== 1);
-    return files.map(item => ({
+  async function getDirectLinks(fidList) {
+    const list = await getFileMetas(fidList);
+    // const files = list.filter(item => item.isdir !== 1);
+    return list.map(item => ({
       fs_id: item.fs_id,
       filename: item.server_filename || item.filename,
       size: item.size,
-      // 原dlink需拼接access_token才能直接下载
-      dlink: item.dlink ? `${item.dlink}&access_token=${this.accessToken}` : null,
+      document: item.isdir,
+      dlink: item.dlink ? `${item.dlink}&access_token=${accessToken}` : null,
     }));
   }
-}
 
-module.exports = BaiduPan;
+  return {
+    getFileMetas,
+    getDirectLinks,
+  };
+}

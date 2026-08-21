@@ -1,0 +1,19 @@
+{
+  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+  "Accept-Encoding": "gzip, deflate, br, zstd",
+  "Accept-Language": "zh-CN,zh-HK;q=0.9,zh;q=0.8,en;q=0.7,en-GB;q=0.6,en-US;q=0.5",
+  "Connection": "keep-alive",
+  "Cookie": "XFI=f5dab568-f515-dc73-4a56-ec537b242b19; XFCS=E3CA4FC6AAA1310CFD032A4A77FE02E25A2E9C7147CF156170E402EFA2934DB1; XFT=oB1DuVR6Nijzszaiqe58avr0MhRGb4+iX3KQa9utbZQ=; __bid_n=1972a9899432496ade676b; PANWEB=1; H_WISE_SIDS=64982_65248_65414_65450_65539_65617_65644_65599_65662_65757_65736_65772_65788_65837_65891; ZFY=vfZPxIA6HWwnooNTAw:AR7eBtKNpnMyMFwYpb162YLrg:C; BDUSS=00VVh-VWpmV0wxUGNWSndDa2ZwSHpyeHZPT1cwWEtTMDRvY1A5RnNTdTVKUlJxSVFBQUFBJCQAAAAAAQAAAAEAAABmfZ9jT1oxMjQwMTkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALmY7Gm5mOxpTE; BDUSS_BFESS=00VVh-VWpmV0wxUGNWSndDa2ZwSHpyeHZPT1cwWEtTMDRvY1A5RnNTdTVKUlJxSVFBQUFBJCQAAAAAAQAAAAEAAABmfZ9jT1oxMjQwMTkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAALmY7Gm5mOxpTE; Hm_lvt_182d6d59474cf78db37e0b2248640ea5=1777115689; Hm_lvt_fa0277816200010a74ab7d2895df481b=1777115704; Hm_lvt_7a3960b6f067eb0085b7f96ff5e660b0=1783706032; csrfToken=vti54xClH542rMkoxEtI-tsv; STOKEN=34d6a7ae84df3ecda675afbd9de03c294170c1adcb00d29a5cc52fbb304c1a1d; BDCLND=kvFV2pQs%2FgWf1oEwfzztbOZfJ%2BgHrObK46ww%2FJb%2FfN4%3D; newlogin=1; BAIDUID=4BB0B61F1573C6AA0EF646B9D45A75E7:FG=1; BAIDUID_BFESS=4BB0B61F1573C6AA0EF646B9D45A75E7:FG=1; RT=\"z=1&dm=baidu.com&si=7d7c29f9-d201-4cc3-9b71-cfcf31ebe596&ss=mt1mk6ze&sl=2&tt=242&bcn=https%3A%2F%2Ffclog.baidu.com%2Flog%2Fweirwood%3Ftype%3Dperf&ld=32r&ul=ay8&hd=ayc\"; ndut_fmt=950FDD8968238370E06BF202239C782834461E5533457A62DDBC14481828B9E2; ab_sr=1.0.1_MzUwZDI0ZDczZmQzN2I4NzI1ODdiOWFmNTc4ODdmN2Y3ZDgxNjQ3NTZkNTYxMTgyZDI0NzAyMzY3MDI3ZTUxNTNlZDhlOTg5NTEzOThmNThlYzZkMGM4YjRhY2NiY2U3YTQ5MDAxYjNmMDI1NTY4Y2JkN2U3MDkzYTc5MzE0MzA1YmQyYTUyYjY2ZWQwYTM0N2IwZWUxMmM0MjJmZmQzNjA4MWFkMGM1MjlmNDhiYjQ0NTRlZTJiNmY2MTk0MWMy; PANPSC=15922625982438332455%3Afuky8UrKH%2BlPXd3PsVhetFcS2d9ns3O5C61tf8CKQkgM155pga0U33Ay8T66GFwAz81ttRoL0tCck0T9AttkQeJEKVZg82vZQplOnNmSwVhDSOepv4J3KdnzWX47O8AW9o%2BE1b88CJDsGg%2BXSX44rYYRrNcBPdtN%2BwocAWIasjJmIVNcupn0qbtbT0VT6%2BsulR186M70GuHrrrPLEABM%2B2iPUgATbka3uGWTSvQJCXzS%2FtNJCz2IkPJg0edegyHn0v7TSQs9iJDrbkBUnMiFfw%3D%3D",
+  "DNT": "1",
+  "Host": "pan.baidu.com",
+  "Referer": "https://pan.baidu.com/disk/home?from=newversion&stayAtHome=true",
+  "Sec-Fetch-Dest": "empty",
+  "Sec-Fetch-Mode": "cors",
+  "Sec-Fetch-Site": "same-origin",
+  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0",
+  "X-Requested-With": "XMLHttpRequest",
+  "sec-ch-ua": "\"Not=A?Brand\";v=\"99\", \"Microsoft Edge\";v=\"151\", \"Chromium\";v=\"151\"",
+  "sec-ch-ua-mobile": "?0",
+  "sec-ch-ua-platform": "\"Windows\"",
+  "sec-gpc": "1"
+}
