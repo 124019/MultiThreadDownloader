@@ -1,13 +1,16 @@
 import axios from 'axios';
 import { readFileSync } from 'fs';
+import { writeFileSync } from 'fs';
 
 const cookies = readFileSync(new URL('./cookies.txt', import.meta.url), 'utf-8');
-
 console.log('Cookies:', cookies);
+
+const baidu_verify_url = readFileSync(new URL('./baidu_verify_url.txt', import.meta.url), 'utf-8');
+console.log('Baidu Verify URL:', baidu_verify_url);
 
 const config = {
   method: 'get',
-  url: 'https://openapi.baidu.com/oauth/2.0/authorize?client_id=IlLqBbU3GjQ0t46TRwFateTprHWl39zF&response_type=token&redirect_uri=oob&confirm_login=0&scope=basic,netdisk',
+  url: baidu_verify_url,
   headers: {
     'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
     'accept-encoding': 'gzip, deflate, br, zstd',
@@ -48,3 +51,6 @@ async function getTokenFromRedirect() {
 
 var AccessToken = await getTokenFromRedirect();
 console.log('Access Token:', AccessToken);
+
+writeFileSync(new URL('./AccessToken.txt', import.meta.url), AccessToken, 'utf-8');
+console.log('Access Token saved to AccessToken.txt');
