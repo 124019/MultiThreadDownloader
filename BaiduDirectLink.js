@@ -1,10 +1,6 @@
 // baidu_direct_link.js
 const axios = require('axios');
 
-/**
- * 百度网盘直链获取模块
- * 依赖：axios (npm install axios)
- */
 class BaiduPan {
   /**
    * @param {string} accessToken - 百度网盘 access_token，需提前获取
@@ -40,8 +36,7 @@ class BaiduPan {
 
       // 处理百度返回码
       if (data.errno === 0) {
-        // 成功，返回列表
-        return data.list || [];
+        return data.list || []; // Success and return data
       } else if (data.errno === 112) {
         throw new Error('页面已过期，请刷新或重新获取 access_token');
       } else if (data.errno === 9019) {
@@ -57,8 +52,7 @@ class BaiduPan {
       }
     } catch (error) {
       if (error.response) {
-        // 服务器返回了错误状态码
-        throw new Error(`HTTP请求失败: ${error.response.status} - ${error.response.statusText}`);
+        throw new Error(`HTTP request error: ${error.response.status} - ${error.response.statusText}`);
       }
       throw error;
     }
