@@ -37,9 +37,8 @@ const pan = new BaiduPan(accessToken);
 
 pan.getDirectLinks(fidList)
   .then(files => {
-    console.log('url:');
     files.forEach(f => {
-      console.log(`${f.filename} (${f.size} bytes): ${f.dlink}`);
+      console.log(`${f.filename} (${f.size} bytes)`);
       console.log(JSON.stringify(f, null, 2))
     });
   })
