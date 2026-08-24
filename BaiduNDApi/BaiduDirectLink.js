@@ -7,7 +7,7 @@ export default function BaiduPan(accessToken) {
   var BD_Headers = JSON.parse(BD_Headers);
   const BD_Cookies = fs.readFileSync(new URL('./cookies.txt', import.meta.url), 'utf-8');
   BD_Headers['cookie'] = BD_Cookies;
-  console.log('BD_Headers:', BD_Headers);
+  // console.log('BD_Headers:', BD_Headers);
 
   async function getFileMetas(fidList, maxRetry = 1) {
     if (!fidList || !fidList.length) throw new Error('not valid fidList');

@@ -3,4 +3,6 @@
 /.idea
 /BaiduNDApi/baidu_verify_url.txt
 /BaiduNDApi/AccessToken.txt
-/BaiduNDApi/RunUrlHeader.json
+/BaiduNDApi/url.txt
+
+/outdated_files
