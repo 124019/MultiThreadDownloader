@@ -1,10 +1,13 @@
 package main
 
 import (
-	"os"
 	"fmt"
-	"net/http"
 	"io"
+	"net/http"
+	"os"
+	"time"
+	"encoding/json"
+	"bytes"
 )
 
 func getLocalText(path string) (string, error) {
@@ -15,23 +18,32 @@ func getLocalText(path string) (string, error) {
     return string(data), nil
 }
 
-func download() ([]byte, error) {
-	client := &http.Client{}
-
-	url, err := getLocalText("./BaiduNDApi/url.txt")
-	if err != nil {
-		return nil, fmt.Errorf("read file error: %w", err)
+func requestLink(url string, method string, headers map[string]string, post_data interface{}, timeout_second int) ([]byte, error) {
+	var data io.Reader
+	switch method {
+		case "POST", "PUT", "PATCH":
+			jsonData, err := json.Marshal(post_data)
+			if err != nil {
+				return nil, fmt.Errorf("marshal json data failed: %w", err)
+			}
+			data = bytes.NewReader(jsonData)
+		case "GET", "DELETE", "HEAD", "OPTIONS":
+			data = nil
+		default:
+			return nil, fmt.Errorf("unsupported method: %s", method)
 	}
-	if url == "" {
-		return nil , fmt.Errorf("url is empty.")
-	}
 
-	req, err := http.NewRequest("GET", url, nil)
+	client := &http.Client{
+		Timeout: time.Duration(timeout_second) * time.Second,
+	}
+	req, err := http.NewRequest(method, url, data)
 	if err != nil {
 		return nil, fmt.Errorf("new request error: %w", err)
 	}
 
-	req.Header.Set("User-Agent", "pan.baidu.com")
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -48,7 +60,20 @@ func download() ([]byte, error) {
 }
 
 func main() {
-	resp, err := download()
+	data, err := os.ReadFile("./BaiduNDApi/url.txt")
+	if err != nil {
+		fmt.Printf("read file error: %v\n", err)
+	}
+	url := string(data)
+	if url == "" {
+		fmt.Printf("url file is empty.")
+	}
+
+	headers := map[string]string{ "User-Agent": "pan.baidu.com" }
+
+	timeout_second := 20
+
+	resp, err := requestLink(url, "GET", headers, nil, timeout_second)
 	if err != nil {
 		fmt.Printf("download error: %v\n", err)
 		return
