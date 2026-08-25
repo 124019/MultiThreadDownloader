@@ -8,37 +8,32 @@ import (
 	"time"
 	"encoding/json"
 	"bytes"
+	"strconv"
+	"regexp"
 )
 
-func getLocalText(path string) (string, error) {
-    data, err := os.ReadFile(path)
-    if err != nil {
-        return "", fmt.Errorf("Failed to read file : %s: %w", path, err)
-    }
-    return string(data), nil
-}
+func requestLink(url string, method string, headers map[string]string, post_data interface{}, timeout_second int) ([]byte, int, error) {
+	client := &http.Client{
+		Timeout: time.Duration(timeout_second) * time.Second,
+	}
 
-func requestLink(url string, method string, headers map[string]string, post_data interface{}, timeout_second int) ([]byte, error) {
 	var data io.Reader
 	switch method {
 		case "POST", "PUT", "PATCH":
 			jsonData, err := json.Marshal(post_data)
 			if err != nil {
-				return nil, fmt.Errorf("marshal json data failed: %w", err)
+				return nil, 0, fmt.Errorf("marshal json data failed : while marshal post_data,  %w", err)
 			}
 			data = bytes.NewReader(jsonData)
-		case "GET", "DELETE", "HEAD", "OPTIONS":
+		case "GET", "DELETE", "OPTIONS", "HEAD":
 			data = nil
 		default:
-			return nil, fmt.Errorf("unsupported method: %s", method)
+			return nil, 0, fmt.Errorf("unsupported method: %s", method)
 	}
 
-	client := &http.Client{
-		Timeout: time.Duration(timeout_second) * time.Second,
-	}
 	req, err := http.NewRequest(method, url, data)
 	if err != nil {
-		return nil, fmt.Errorf("new request error: %w", err)
+		return nil, 0, fmt.Errorf("new request error: %w", err)
 	}
 
 	for k, v := range headers {
@@ -47,16 +42,24 @@ func requestLink(url string, method string, headers map[string]string, post_data
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("get response error: %w", err)
+		return nil, resp.StatusCode, fmt.Errorf("get response error: %w", err)
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("read body error: %w", err)
+	if method == "HEAD" {
+		headers ,err := json.Marshal(resp.Header)
+		if err != nil {
+			return nil, resp.StatusCode, fmt.Errorf("marshal json data failed: while marshal resp.Header, %w", err)
+		}
+		return headers, resp.StatusCode, nil
 	}
 
-	return body, nil
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, resp.StatusCode, fmt.Errorf("read body error: %w", err)
+	}
+
+	return body, resp.StatusCode, nil
 }
 
 func main() {
@@ -73,11 +76,32 @@ func main() {
 
 	timeout_second := 20
 
-	resp, err := requestLink(url, "GET", headers, nil, timeout_second)
+	resp, StatusCode, err := requestLink(url, "HEAD", headers, nil, timeout_second)
 	if err != nil {
 		fmt.Printf("download error: %v\n", err)
 		return
 	}
 
+	fmt.Printf("status code: %d\n", StatusCode)
 	fmt.Println(string(resp))
+
+	var header map[string][]string
+	err = json.Unmarshal(resp, &header)
+	if err != nil {
+		fmt.Printf("unmarshal json data failed: %v\n", err)
+		return
+	}
+	ContentLength := header["Content-Length"][0]
+	ContentDisposition := header["Content-Disposition"][0]
+
+	totalSize, err := strconv.Atoi(ContentLength)
+	if err != nil {
+		fmt.Printf("convert string to int failed: %v\n", err)
+		return
+	}
+	fmt.Printf("total size: %d bytes\n", totalSize) // file size(Bytes)
+
+	re := regexp.MustCompile(`filename=\"(.+?)\"`)
+	filename := re.FindStringSubmatch(ContentDisposition)[1]
+	fmt.Printf("filename: %s\n", filename)
 }
