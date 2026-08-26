@@ -2,64 +2,42 @@ package main
 
 import (
 	"fmt"
-	"io"
-	"net/http"
 	"os"
-	"time"
 	"encoding/json"
-	"bytes"
 	"strconv"
 	"regexp"
+	"MultiThreadDownloader/utils"
 )
 
-func requestLink(url string, method string, headers map[string]string, post_data interface{}, timeout_second int) ([]byte, int, error) {
-	client := &http.Client{
-		Timeout: time.Duration(timeout_second) * time.Second,
-	}
 
-	var data io.Reader
-	switch method {
-		case "POST", "PUT", "PATCH":
-			jsonData, err := json.Marshal(post_data)
-			if err != nil {
-				return nil, 0, fmt.Errorf("marshal json data failed : while marshal post_data,  %w", err)
-			}
-			data = bytes.NewReader(jsonData)
-		case "GET", "DELETE", "OPTIONS", "HEAD":
-			data = nil
-		default:
-			return nil, 0, fmt.Errorf("unsupported method: %s", method)
-	}
+func get_file_info(headers map[string]string, url string) (int, string, error) {
+	timeout_second := 20
 
-	req, err := http.NewRequest(method, url, data)
+	resp, StatusCode, err := utils.NetRequest(url, "HEAD", headers, nil, timeout_second)
 	if err != nil {
-		return nil, 0, fmt.Errorf("new request error: %w", err)
+		return 0, "", fmt.Errorf("download error: %v\n", err)
 	}
 
-	for k, v := range headers {
-		req.Header.Set(k, v)
-	}
+	fmt.Printf("status code: %d\n", StatusCode)
+	fmt.Println(string(resp))
 
-	resp, err := client.Do(req)
+	var header map[string][]string
+	err = json.Unmarshal(resp, &header)
 	if err != nil {
-		return nil, resp.StatusCode, fmt.Errorf("get response error: %w", err)
+		return 0, "", fmt.Errorf("unmarshal json data failed: %v\n", err)
 	}
-	defer resp.Body.Close()
+	ContentLength := header["Content-Length"][0]
+	ContentDisposition := header["Content-Disposition"][0]
 
-	if method == "HEAD" {
-		headers ,err := json.Marshal(resp.Header)
-		if err != nil {
-			return nil, resp.StatusCode, fmt.Errorf("marshal json data failed: while marshal resp.Header, %w", err)
-		}
-		return headers, resp.StatusCode, nil
-	}
-
-	body, err := io.ReadAll(resp.Body)
+	totalSize, err := strconv.Atoi(ContentLength)
 	if err != nil {
-		return nil, resp.StatusCode, fmt.Errorf("read body error: %w", err)
+		return 0, "", fmt.Errorf("convert string to int failed: %v\n", err)
 	}
-
-	return body, resp.StatusCode, nil
+	fmt.Printf("total size: %d bytes\n", totalSize) // file size(Bytes)
+	re := regexp.MustCompile(`filename=\"(.+?)\"`)
+	filename := re.FindStringSubmatch(ContentDisposition)[1]
+	fmt.Printf("filename: %s\n", filename)
+	return totalSize, filename, nil
 }
 
 func main() {
@@ -72,36 +50,23 @@ func main() {
 		fmt.Printf("url file is empty.")
 	}
 
-	headers := map[string]string{ "User-Agent": "pan.baidu.com" }
-
-	timeout_second := 20
-
-	resp, StatusCode, err := requestLink(url, "HEAD", headers, nil, timeout_second)
+	data, err = os.ReadFile("./BaiduNDApi/RunUrlHeader.json")
 	if err != nil {
-		fmt.Printf("download error: %v\n", err)
+		fmt.Printf("read file error: %v\n", err)
+	}
+	headers := map[string]string{}
+	err = json.Unmarshal(data, &headers)
+	if err != nil {
+		fmt.Printf("unmarshal json data failed:while reading headers, %v\n", err)
 		return
 	}
-
-	fmt.Printf("status code: %d\n", StatusCode)
-	fmt.Println(string(resp))
-
-	var header map[string][]string
-	err = json.Unmarshal(resp, &header)
+	
+	totalSize, filename, err := get_file_info(headers, url)
 	if err != nil {
-		fmt.Printf("unmarshal json data failed: %v\n", err)
+		fmt.Printf("get file info error: %v\n", err)
 		return
 	}
-	ContentLength := header["Content-Length"][0]
-	ContentDisposition := header["Content-Disposition"][0]
-
-	totalSize, err := strconv.Atoi(ContentLength)
-	if err != nil {
-		fmt.Printf("convert string to int failed: %v\n", err)
-		return
-	}
-	fmt.Printf("total size: %d bytes\n", totalSize) // file size(Bytes)
-
-	re := regexp.MustCompile(`filename=\"(.+?)\"`)
-	filename := re.FindStringSubmatch(ContentDisposition)[1]
+	fmt.Printf("total size: %d bytes\n", totalSize)
 	fmt.Printf("filename: %s\n", filename)
+
 }

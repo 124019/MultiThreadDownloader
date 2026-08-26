@@ -1,0 +1,3 @@
+Create cookies.json/cookies.txt -> post.py -> getAccessToken.js -> BaicuND_main.js -> Copy 1 Direct Link to url.txt
+
+run main.go
