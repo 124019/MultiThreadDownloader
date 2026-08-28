@@ -6,18 +6,45 @@ import (
 	"encoding/json"
 	"strconv"
 	"regexp"
+	"time"
+)
+import (
 	"MultiThreadDownloader/utils"
 )
 
+type Chunk struct {
+	// no int
+	st int
+	ed int
+}
+
+
+func makeChunks(total int, step int) []Chunk {
+	var result []Chunk
+	for st := 1; st <= total; st += step {
+		ed := st + step - 1
+		if ed > total {
+			ed = total
+		}
+		result = append(result, Chunk{
+			// no: (st - 1) / step,
+			st: st,
+			ed: ed,
+		})
+	}
+	return result
+	// fmt.Println(result)
+}
 
 func get_file_info(headers map[string]string, url string) (int, string, error) {
 	timeout_second := 20
 
-	resp, StatusCode, err := utils.NetRequest(url, "HEAD", headers, nil, timeout_second)
+	resp, StatusCode, Latency, err := utils.NetRequest(url, "HEAD", headers, nil, timeout_second)
 	if err != nil {
 		return 0, "", fmt.Errorf("download error: %v\n", err)
 	}
 
+	fmt.Printf("Latency: %d ms\n", Latency)
 	fmt.Printf("status code: %d\n", StatusCode)
 	fmt.Println(string(resp))
 
@@ -68,5 +95,22 @@ func main() {
 	}
 	fmt.Printf("total size: %d bytes\n", totalSize)
 	fmt.Printf("filename: %s\n", filename)
+
+	chunk := makeChunks(totalSize, 2048)
+	// fmt.Println(chunk)
+
+	chunk0 := chunk[0]
+	fmt.Printf("chunk0: %d - %d\n", chunk0.st, chunk0.ed)
+	headers["Range"] = fmt.Sprintf("bytes=%d-%d", chunk0.st, chunk0.ed-1)
+	start := time.Now()
+	resp, StatusCode, _, err := utils.NetRequest(url, "GET", headers, nil, 30)
+	if err != nil {
+		fmt.Printf("download error: %v\n", err)
+		return
+	}
+	Elapsed := time.Since(start)
+	fmt.Printf("download time: %s\n", Elapsed)
+	fmt.Printf("status code: %d\n", StatusCode)
+	fmt.Println(string(resp))
 
 }

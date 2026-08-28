@@ -9,19 +9,19 @@ import (
 	"bytes"
 )
 
-func NetRequest(url string, method string, headers map[string]string, post_data interface{}, timeout_second int) ([]byte, int, error) {
+func NetRequest(url string, method string, headers map[string]string, post_data interface{}, timeout_second int) ([]byte, int, time.Duration, error) { // Return : data , status code , elapsed time , error
 	var data io.Reader
 	switch method {
 		case "POST", "PUT", "PATCH":
 			jsonData, err := json.Marshal(post_data)
 			if err != nil {
-				return nil, 0, fmt.Errorf("marshal json data failed : while marshal post_data,  %w", err)
+				return nil, 0, 0, fmt.Errorf("marshal json data failed : while marshal post_data,  %w", err)
 			}
 			data = bytes.NewReader(jsonData)
 		case "GET", "DELETE", "OPTIONS", "HEAD":
 			data = nil
 		default:
-			return nil, 0, fmt.Errorf("unsupported method: %s", method)
+			return nil, 0, 0, fmt.Errorf("unsupported method: %s", method)
 	}
 	client := &http.Client{
 		Timeout: time.Duration(timeout_second) * time.Second,
@@ -29,31 +29,34 @@ func NetRequest(url string, method string, headers map[string]string, post_data 
 
 	req, err := http.NewRequest(method, url, data)
 	if err != nil {
-		return nil, 0, fmt.Errorf("new request error: %w", err)
+		return nil, 0, 0, fmt.Errorf("new request error: %w", err)
 	}
 
 	for k, v := range headers {
 		req.Header.Set(k, v)
 	}
 
+	start := time.Now()
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, resp.StatusCode, fmt.Errorf("get response error: %w", err)
+		return nil, resp.StatusCode, 0, fmt.Errorf("get response error: %w", err)
 	}
+	elapsed := time.Since(start)
+	fmt.Printf("Request took %v\n", elapsed)
 	defer resp.Body.Close()
 
 	if method == "HEAD" {
 		headers ,err := json.Marshal(resp.Header)
 		if err != nil {
-			return nil, resp.StatusCode, fmt.Errorf("marshal json data failed: while marshal resp.Header, %w", err)
+			return nil, resp.StatusCode, elapsed, fmt.Errorf("marshal json data failed: while marshal resp.Header, %w", err)
 		}
-		return headers, resp.StatusCode, nil
+		return headers, resp.StatusCode, elapsed, nil
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, resp.StatusCode, fmt.Errorf("read body error: %w", err)
+		return nil, resp.StatusCode, elapsed, fmt.Errorf("read body error: %w", err)
 	}
 
-	return body, resp.StatusCode, nil
+	return body, resp.StatusCode, elapsed, nil
 }
