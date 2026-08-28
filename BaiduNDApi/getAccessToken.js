@@ -49,8 +49,11 @@ async function getTokenFromRedirect() {
   }
 }
 
-var AccessToken = await getTokenFromRedirect();
-console.log('Access Token:', AccessToken);
+export default async function () {
+  var AccessToken = await getTokenFromRedirect();
+  console.log('Access Token:', AccessToken);
 
-writeFileSync(new URL('./AccessToken.txt', import.meta.url), AccessToken, 'utf-8');
-console.log('Access Token saved to AccessToken.txt');
+  writeFileSync(new URL('./AccessToken.txt', import.meta.url), AccessToken, 'utf-8');
+  console.log('Access Token saved to AccessToken.txt');
+  return AccessToken;
+}

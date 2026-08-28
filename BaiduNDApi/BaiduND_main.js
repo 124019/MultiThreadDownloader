@@ -1,6 +1,14 @@
 import getFileList from './getFileLists.js';
-import BaiduPan from './BaiduDirectLink.js'
+import getDirectLinks from './BaiduDirectLink.js';
+import refreshAccessToken from './getAccessToken.js';
 import fs from 'fs';
+
+
+var BD_Headers = fs.readFileSync(new URL('./BD_Headers.json', import.meta.url), 'utf-8');
+var BD_Headers = JSON.parse(BD_Headers);
+const BD_Cookies = fs.readFileSync(new URL('./cookies.txt', import.meta.url), 'utf-8');
+BD_Headers['cookie'] = BD_Cookies;
+// console.log('BD_Headers:', BD_Headers);
 
 const FileList = await getFileList('/');
 if (!FileList) {
@@ -32,16 +40,26 @@ console.log("File ids", fidList)
 
 // Download all files in the index page END
 
-const accessToken = fs.readFileSync(new URL('./AccessToken.txt', import.meta.url), 'utf-8');
-const pan = new BaiduPan(accessToken);
+let AccessToken = fs.readFileSync(new URL('./AccessToken.txt', import.meta.url), 'utf-8');
 
-pan.getDirectLinks(fidList)
-  .then(files => {
+let retry_count = 0;
+try {
+  let files = await getDirectLinks(AccessToken, BD_Headers, fidList)
+  files.forEach(f => {
+    console.log(`${f.filename} (${f.size} bytes)`);
+    console.log(JSON.stringify(f, null, 2))
+  });
+} catch (error) {
+  if (error.message === 'InvalidAccessTokenError') {
+    retry_count += 1;
+    AccessToken = await refreshAccessToken();
+    console.log('Access Token is refreshed.');
+    let files = await getDirectLinks(AccessToken, BD_Headers, fidList)
     files.forEach(f => {
       console.log(`${f.filename} (${f.size} bytes)`);
       console.log(JSON.stringify(f, null, 2))
     });
-  })
-  .catch(err => {
-    console.error('Failed to get direct links:', err.message);
-  });
+  } else {
+    console.log('Error:', error.message);
+  }
+}
