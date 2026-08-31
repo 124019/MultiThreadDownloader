@@ -21,7 +21,7 @@ type Chunk struct {
 
 func makeChunks(total int, step int) []Chunk {
 	var result []Chunk
-	for st := 1; st <= total; st += step {
+	for st := 0; st <= total; st += step {
 		ed := st + step - 1
 		if ed > total {
 			ed = total
@@ -108,8 +108,8 @@ func main() {
 		fmt.Printf("download error: %v\n", err)
 		return
 	}
-	Elapsed := time.Since(start)
-	fmt.Printf("download time: %s\n", Elapsed)
+	time_elapsed := time.Since(start)
+	fmt.Printf("download time: %s\n", time_elapsed)
 	fmt.Printf("status code: %d\n", StatusCode)
 	fmt.Println(string(resp))
 
