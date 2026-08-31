@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"strconv"
 	"regexp"
-	"time"
 )
 import (
 	"MultiThreadDownloader/utils"
@@ -39,12 +38,11 @@ func makeChunks(total int, step int) []Chunk {
 func get_file_info(headers map[string]string, url string) (int, string, error) {
 	timeout_second := 20
 
-	resp, StatusCode, Latency, err := utils.NetRequest(url, "HEAD", headers, nil, timeout_second)
+	resp, StatusCode, _, err := utils.NetRequest(url, "HEAD", headers, nil, timeout_second)
 	if err != nil {
 		return 0, "", fmt.Errorf("download error: %v\n", err)
 	}
 
-	fmt.Printf("Latency: %d ms\n", Latency)
 	fmt.Printf("status code: %d\n", StatusCode)
 	fmt.Println(string(resp))
 
@@ -96,21 +94,31 @@ func main() {
 	fmt.Printf("total size: %d bytes\n", totalSize)
 	fmt.Printf("filename: %s\n", filename)
 
-	chunk := makeChunks(totalSize, 2048)
+	// Get Latency
+	_, _, Latency, err := utils.NetRequest("https://d.pcs.baidu.com/", "GET", headers, nil, 30)
+	if err != nil {
+		fmt.Printf("get Latency error: %v\n", err)
+		return
+	}
+	fmt.Printf("Latency: %d ms\n", Latency / 1000000)
+	// Get Latency End
+
+	chunk := makeChunks(totalSize, 150*1024)
 	// fmt.Println(chunk)
+	length := len(chunk)
+	fmt.Printf("total chunk: %d\n", length)
 
 	chunk0 := chunk[0]
 	fmt.Printf("chunk0: %d - %d\n", chunk0.st, chunk0.ed)
 	headers["Range"] = fmt.Sprintf("bytes=%d-%d", chunk0.st, chunk0.ed-1)
-	start := time.Now()
-	resp, StatusCode, _, err := utils.NetRequest(url, "GET", headers, nil, 30)
+	_, StatusCode, time_cost, err := utils.NetRequest(url, "GET", headers, nil, 30)
 	if err != nil {
 		fmt.Printf("download error: %v\n", err)
 		return
 	}
-	time_elapsed := time.Since(start)
+	time_elapsed := (time_cost - Latency)
 	fmt.Printf("download time: %s\n", time_elapsed)
 	fmt.Printf("status code: %d\n", StatusCode)
-	fmt.Println(string(resp))
+	// fmt.Println(string(resp))
 
 }

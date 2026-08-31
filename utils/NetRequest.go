@@ -9,7 +9,7 @@ import (
 	"bytes"
 )
 
-func NetRequest(url string, method string, headers map[string]string, post_data interface{}, timeout_second int) ([]byte, int, time.Duration, error) { // Return : data , status code , elapsed time , error
+func NetRequest(url string, method string, headers map[string]string, post_data interface{}, timeout_second int) ([]byte, int, time.Duration, error) { // Return : data , status code , elapsed time/ns , error
 	var data io.Reader
 	switch method {
 		case "POST", "PUT", "PATCH":
@@ -38,25 +38,33 @@ func NetRequest(url string, method string, headers map[string]string, post_data 
 
 	start := time.Now()
 	resp, err := client.Do(req)
-	if err != nil {
-		return nil, resp.StatusCode, 0, fmt.Errorf("get response error: %w", err)
+	var StatusCode int
+	if resp != nil { 
+		StatusCode = resp.StatusCode
+	} else { 
+		return nil, 0, time.Since(start), err
 	}
-	elapsed := time.Since(start)
-	fmt.Printf("Request took %v\n", elapsed)
+	if err != nil {
+		return nil, StatusCode, 0, fmt.Errorf("get response error: %w", err)
+	}
 	defer resp.Body.Close()
 
 	if method == "HEAD" {
+		elapsed := time.Since(start)
+		fmt.Printf("Request took %v\n", elapsed)
 		headers ,err := json.Marshal(resp.Header)
 		if err != nil {
-			return nil, resp.StatusCode, elapsed, fmt.Errorf("marshal json data failed: while marshal resp.Header, %w", err)
+			return nil, StatusCode, elapsed, fmt.Errorf("marshal json data failed: while marshal resp.Header, %w", err)
 		}
-		return headers, resp.StatusCode, elapsed, nil
+		return headers, StatusCode, elapsed, nil
 	}
 
 	body, err := io.ReadAll(resp.Body)
+	elapsed := time.Since(start)
+	fmt.Printf("Request took %v\n", elapsed)
 	if err != nil {
-		return nil, resp.StatusCode, elapsed, fmt.Errorf("read body error: %w", err)
+		return nil, StatusCode, elapsed, fmt.Errorf("read body error: %w", err)
 	}
 
-	return body, resp.StatusCode, elapsed, nil
+	return body, StatusCode, elapsed, nil
 }
