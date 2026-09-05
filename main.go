@@ -11,21 +11,20 @@ import (
 	"MultiThreadDownloader/utils"
 )
 
-type Chunk struct {
-	// no int
+type Interval struct {
 	st int
 	ed int
 }
 
 
-func makeChunks(total int, step int) []Chunk {
-	var result []Chunk
+func makeChunks(total int, step int) []Interval {
+	var result []Interval
 	for st := 0; st <= total; st += step {
 		ed := st + step - 1
 		if ed > total {
-			ed = total
+			ed = total - 1 // first is 0, last is tt - 1
 		}
-		result = append(result, Chunk{
+		result = append(result, Interval{
 			// no: (st - 1) / step,
 			st: st,
 			ed: ed,
@@ -33,6 +32,16 @@ func makeChunks(total int, step int) []Chunk {
 	}
 	return result
 	// fmt.Println(result)
+}
+
+func str_chunk(intervals []Interval) []string {
+	result := make([]string, 0, len(intervals))
+	for i := range intervals {
+		Range := fmt.Sprintf("bytes=%d-%d", intervals[i].st, intervals[i].ed)
+		result = append(result, Range)
+	}
+	// fmt.Println(result)
+	return result
 }
 
 func get_file_info(headers map[string]string, url string) (int, string, error) {
@@ -103,14 +112,14 @@ func main() {
 	fmt.Printf("Latency: %d ms\n", Latency / 1000000)
 	// Get Latency End
 
-	chunk := makeChunks(totalSize, 150*1024)
+	str_range := str_chunk(makeChunks(totalSize, 150*1024))
 	// fmt.Println(chunk)
-	length := len(chunk)
+	length := len(str_range)
 	fmt.Printf("total chunk: %d\n", length)
 
-	chunk0 := chunk[0]
-	fmt.Printf("chunk0: %d - %d\n", chunk0.st, chunk0.ed)
-	headers["Range"] = fmt.Sprintf("bytes=%d-%d", chunk0.st, chunk0.ed-1)
+	str_range0 := str_range[0]
+	fmt.Printf("range: %s\n", str_range0)
+	headers["Range"] = str_range0
 	_, StatusCode, time_cost, err := utils.NetRequest(url, "GET", headers, nil, 30)
 	if err != nil {
 		fmt.Printf("download error: %v\n", err)
