@@ -1,14 +1,12 @@
 package main
 
 import (
+	"MultiThreadDownloader/utils"
+	"encoding/json"
 	"fmt"
 	"os"
-	"encoding/json"
-	"strconv"
 	"regexp"
-)
-import (
-	"MultiThreadDownloader/utils"
+	"strconv"
 )
 
 type Interval struct {
@@ -30,8 +28,8 @@ func makeChunks(total int, step int) []Interval {
 			ed: ed,
 		})
 	}
-	return result
 	// fmt.Println(result)
+	return result
 }
 
 func str_chunk(intervals []Interval) []string {
