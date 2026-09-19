@@ -7,9 +7,13 @@ import (
 	"time"
 	"encoding/json"
 	"bytes"
+	"errors"
+	"context"
 )
 
-func NetRequest(url string, method string, headers map[string]string, post_data interface{}, timeout_second int) ([]byte, int, time.Duration, error) { // Return : data , status code , elapsed time/ns , error
+var ErrorRequestTimeout = errors.New("request timeout")
+
+func NetRequest(url string, method string, headers map[string]string, post_data interface{}, timeout_second int) ([]byte, int, time.Duration, error) { // Return : data , status code , elapsed time , error
 	var data io.Reader
 	switch method {
 		case "POST", "PUT", "PATCH":
@@ -36,16 +40,20 @@ func NetRequest(url string, method string, headers map[string]string, post_data 
 		req.Header.Set(k, v)
 	}
 
+	var StatusCode int
 	start := time.Now()
 	resp, err := client.Do(req)
-	var StatusCode int
+	if err != nil {
+		if errors.Is(err, context.DeadlineExceeded) {
+			return nil, 0, time.Since(start), fmt.Errorf("%w: after %v (timeout=%d):%w", ErrorRequestTimeout, time.Since(start), timeout_second, err)
+		}else {
+			return nil, 0, time.Since(start), fmt.Errorf("Request Error: %w", err)
+		}
+	}
 	if resp != nil { 
 		StatusCode = resp.StatusCode
 	} else { 
-		return nil, 0, time.Since(start), err
-	}
-	if err != nil {
-		return nil, StatusCode, 0, fmt.Errorf("get response error: %w", err)
+		return nil, 0, time.Since(start), fmt.Errorf("No valid Response, error?: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -63,7 +71,11 @@ func NetRequest(url string, method string, headers map[string]string, post_data 
 	elapsed := time.Since(start)
 	fmt.Printf("Request took %v\n", elapsed)
 	if err != nil {
-		return nil, StatusCode, elapsed, fmt.Errorf("read body error: %w", err)
+		if errors.Is(err, context.DeadlineExceeded) {
+			return nil, 0, time.Since(start), fmt.Errorf("%w: after %v (timeout=%d):%w", ErrorRequestTimeout, time.Since(start), timeout_second, err)
+		}else {
+			return nil, 0, time.Since(start), fmt.Errorf("Request Error: %w", err)
+		}
 	}
 
 	return body, StatusCode, elapsed, nil
