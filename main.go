@@ -32,7 +32,7 @@ func makeChunks(total int, step int) []Interval {
 	return result
 }
 
-func str_chunk(intervals []Interval) []string {
+func str_chunk_index(intervals []Interval) []string {
 	result := make([]string, 0, len(intervals))
 	for i := range intervals {
 		Range := fmt.Sprintf("bytes=%d-%d", intervals[i].st, intervals[i].ed)
@@ -73,6 +73,10 @@ func get_file_info(headers map[string]string, url string) (int, string, error) {
 }
 
 func main() {
+	maxThread := 12
+	chunkSize := 70 * 1024
+	// Example
+
 	data, err := os.ReadFile("./BaiduNDApi/url.txt")
 	if err != nil {
 		fmt.Printf("read file error: %v\n", err)
@@ -110,22 +114,27 @@ func main() {
 	fmt.Printf("Latency: %d ms\n", Latency / 1000000)
 	// Get Latency End
 
-	str_range := str_chunk(makeChunks(totalSize, 150*1024))
+	str_range := str_chunk_index(makeChunks(totalSize, chunkSize))
 	// fmt.Println(chunk)
 	length := len(str_range)
 	fmt.Printf("total chunk: %d\n", length)
 
-	str_range0 := str_range[0]
-	fmt.Printf("range: %s\n", str_range0)
-	headers["Range"] = str_range0
-	_, StatusCode, time_cost, err := utils.NetRequest(url, "GET", headers, nil, 30)
+	err = utils.MultiTGet(url, headers, maxThread, 3, str_range)
 	if err != nil {
-		fmt.Printf("download error: %v\n", err)
+		fmt.Printf("multi-threaded download error: %v\n", err)
 		return
 	}
-	time_elapsed := (time_cost - Latency)
-	fmt.Printf("download time: %s\n", time_elapsed)
-	fmt.Printf("status code: %d\n", StatusCode)
-	// fmt.Println(string(resp))
-
+	// //
+	// str_range0 := str_range[0]
+	// fmt.Printf("range: %s\n", str_range0)
+	// headers["Range"] = str_range0
+	// _, StatusCode, time_cost, err := utils.NetRequest(url, "GET", headers, nil, 30)
+	// if err != nil {
+	// 	fmt.Printf("download error: %v\n", err)
+	// 	return
+	// }
+	// time_elapsed := (time_cost - Latency)
+	// fmt.Printf("download time: %s\n", time_elapsed)
+	// fmt.Printf("status code: %d\n", StatusCode)
+	// // fmt.Println(string(resp))
 }
