@@ -27,7 +27,7 @@ const config = {
     'upgrade-insecure-requests': '1',
     'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36'
   },
-  maxRedirects: 5,       // 自动跟随重定向（最多5次）
+  maxRedirects: 5, // Redirects limit
   validateStatus: (status) => status >= 200 && status < 400
 };
 
@@ -42,7 +42,7 @@ async function getTokenFromRedirect() {
     if (match) {
       return match[1];
     } else {
-      console.warn('Cannot find access_token in the final URL:', finalUrl);
+      console.warn('Cannot find access_token in the final URL:', finalUrl, " \n Try to Refresh your cookies by logging in again.");
     }
   } catch (error) {
     console.error('Request failed:', error.message);

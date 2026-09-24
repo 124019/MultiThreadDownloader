@@ -4,13 +4,15 @@ import refreshAccessToken from './getAccessToken.js';
 import fs from 'fs';
 
 
+var ND_Path = '/我的资源/爱言叶5动态素材包';
+// example
 var BD_Headers = fs.readFileSync(new URL('./BD_Headers.json', import.meta.url), 'utf-8');
 var BD_Headers = JSON.parse(BD_Headers);
 const BD_Cookies = fs.readFileSync(new URL('./cookies.txt', import.meta.url), 'utf-8');
 BD_Headers['cookie'] = BD_Cookies;
 // console.log('BD_Headers:', BD_Headers);
 
-const FileList = await getFileList('/');
+const FileList = await getFileList(ND_Path);
 if (!FileList) {
     console.log('Baidu Server wasn\'t return anything.');
 }
