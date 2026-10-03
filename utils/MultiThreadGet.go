@@ -13,6 +13,7 @@ func downloadpcs(c string) {
 }
 
 func MultiTGet(url string, headers map[string]string, maxThread int, maxRetry int, cnk []string) error {
+	single_timeout := 2
 	// var cnk []string = []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20"}
 	// maxThread := 5
 	// example
@@ -40,26 +41,27 @@ func MultiTGet(url string, headers map[string]string, maxThread int, maxRetry in
 				reqheader[k] = v
 			}
 			for chunk := range c {
-				retrys := 0
+				retries := 0
 				for {
 					reqheader["Range"] = chunk
-					_, _, _, err := NetRequest(url, "GET", reqheader, nil, 5) // For testing, it will return nothing
-					retrys++
-					if retrys < maxRetry {
+					resp := NetRequest(url, "GET", reqheader, nil, single_timeout)
+					err := resp.ReqErr
+					retries++
+					if retries < maxRetry + 1 {
 						if errors.Is(err, ErrorRequestTimeout) {
-							fmt.Println("Request Timeout, Retry after 1s")
-							time.Sleep(1 * time.Second)
+							fmt.Printf("Retry %v : Request Timeout, Retry after 1s\n", retries)
+							time.Sleep(751 * time.Millisecond) // Just choose this number randomly.
 							continue
 						}else if err != nil {
 							errChan <- fmt.Errorf("download error: %w", err)
 							return
 						}
 					} else {
-						errChan <- fmt.Errorf("Too much retrys")
+						errChan <- fmt.Errorf("Too many retries: %v", maxRetry)
 					}
 					break
 				}
-			}
+			} // For testing, it will return nothing
 		}()
 	}
 

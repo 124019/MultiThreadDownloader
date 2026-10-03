@@ -45,12 +45,15 @@ func str_chunk_index(intervals []Interval) []string {
 func get_file_info(headers map[string]string, url string) (int, string, error) {
 	timeout_second := 20
 
-	resp, StatusCode, _, err := utils.NetRequest(url, "HEAD", headers, nil, timeout_second)
+	var Response utils.NetResp
+	Response = utils.NetRequest(url, "HEAD", headers, nil, timeout_second)
+	err := Response.ReqErr
+	resp := Response.RespBody
 	if err != nil {
 		return 0, "", fmt.Errorf("download error: %v\n", err)
 	}
 
-	fmt.Printf("status code: %d\n", StatusCode)
+	fmt.Printf("status code: %d\n", Response.RespStatusCode)
 	fmt.Println(string(resp))
 
 	var header map[string][]string
@@ -73,8 +76,8 @@ func get_file_info(headers map[string]string, url string) (int, string, error) {
 }
 
 func main() {
-	maxThread := 12
-	chunkSize := 70 * 1024
+	maxThread := 15
+	chunkSize := 512 * 1024
 	// Example
 
 	data, err := os.ReadFile("./BaiduNDApi/url.txt")
@@ -106,12 +109,12 @@ func main() {
 	fmt.Printf("filename: %s\n", filename)
 
 	// Get Latency
-	_, _, Latency, err := utils.NetRequest("https://d.pcs.baidu.com/", "GET", headers, nil, 30)
-	if err != nil {
-		fmt.Printf("get Latency error: %v\n", err)
+	Response := utils.NetRequest("https://d.pcs.baidu.com/", "GET", headers, nil, 30)
+	if Response.ReqErr != nil {
+		fmt.Printf("get Latency error: %v\n", Response.ReqErr)
 		return
 	}
-	fmt.Printf("Latency: %d ms\n", Latency / 1000000)
+	fmt.Printf("Latency: %d ms\n", Response.ReqElapsed / 1000000)
 	// Get Latency End
 
 	str_range := str_chunk_index(makeChunks(totalSize, chunkSize))
@@ -119,22 +122,9 @@ func main() {
 	length := len(str_range)
 	fmt.Printf("total chunk: %d\n", length)
 
-	err = utils.MultiTGet(url, headers, maxThread, 3, str_range)
+	err = utils.MultiTGet(url, headers, maxThread, 5, str_range)
 	if err != nil {
 		fmt.Printf("multi-threaded download error: %v\n", err)
 		return
 	}
-	// //
-	// str_range0 := str_range[0]
-	// fmt.Printf("range: %s\n", str_range0)
-	// headers["Range"] = str_range0
-	// _, StatusCode, time_cost, err := utils.NetRequest(url, "GET", headers, nil, 30)
-	// if err != nil {
-	// 	fmt.Printf("download error: %v\n", err)
-	// 	return
-	// }
-	// time_elapsed := (time_cost - Latency)
-	// fmt.Printf("download time: %s\n", time_elapsed)
-	// fmt.Printf("status code: %d\n", StatusCode)
-	// // fmt.Println(string(resp))
 }
