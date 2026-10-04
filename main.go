@@ -1,7 +1,8 @@
 package main
 
 import (
-	"MultiThreadDownloader/utils"
+	"MultiThreadDownloader/component/core"
+	"MultiThreadDownloader/component/base"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -45,15 +46,13 @@ func str_chunk_index(intervals []Interval) []string {
 func get_file_info(headers map[string]string, url string) (int, string, error) {
 	timeout_second := 20
 
-	var Response utils.NetResp
-	Response = utils.NetRequest(url, "HEAD", headers, nil, timeout_second)
-	err := Response.ReqErr
-	resp := Response.RespBody
+	response, err := base.NetRequest(url, "HEAD", headers, nil, timeout_second)
+	resp := response.RespBody
 	if err != nil {
 		return 0, "", fmt.Errorf("download error: %v\n", err)
 	}
 
-	fmt.Printf("status code: %d\n", Response.RespStatusCode)
+	fmt.Printf("status code: %d\n", response.RespStatusCode)
 	fmt.Println(string(resp))
 
 	var header map[string][]string
@@ -109,12 +108,12 @@ func main() {
 	fmt.Printf("filename: %s\n", filename)
 
 	// Get Latency
-	Response := utils.NetRequest("https://d.pcs.baidu.com/", "GET", headers, nil, 30)
-	if Response.ReqErr != nil {
-		fmt.Printf("get Latency error: %v\n", Response.ReqErr)
+	response, err := base.NetRequest("https://d.pcs.baidu.com/", "GET", headers, nil, 30)
+	if err != nil {
+		fmt.Printf("get Latency error: %v\n", err)
 		return
 	}
-	fmt.Printf("Latency: %d ms\n", Response.ReqElapsed / 1000000)
+	fmt.Printf("Latency: %d ms\n", response.ReqElapsed / 1000000)
 	// Get Latency End
 
 	str_range := str_chunk_index(makeChunks(totalSize, chunkSize))
@@ -122,7 +121,7 @@ func main() {
 	length := len(str_range)
 	fmt.Printf("total chunk: %d\n", length)
 
-	err = utils.MultiTGet(url, headers, maxThread, 5, str_range)
+	err = core.MultiTGet(url, headers, maxThread, 5, str_range)
 	if err != nil {
 		fmt.Printf("multi-threaded download error: %v\n", err)
 		return

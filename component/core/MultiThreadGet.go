@@ -1,10 +1,11 @@
-package utils
+package core
 
 import (
 	"fmt"
 	"sync"
 	"time"
 	"errors"
+	"MultiThreadDownloader/component/base"
 )
 
 func downloadpcs(c string) {
@@ -44,11 +45,10 @@ func MultiTGet(url string, headers map[string]string, maxThread int, maxRetry in
 				retries := 0
 				for {
 					reqheader["Range"] = chunk
-					resp := NetRequest(url, "GET", reqheader, nil, single_timeout)
-					err := resp.ReqErr
+					_, err := base.NetRequest(url, "GET", reqheader, nil, single_timeout)
 					retries++
 					if retries < maxRetry + 1 {
-						if errors.Is(err, ErrorRequestTimeout) {
+						if errors.Is(err, base.ErrorRequestTimeout) {
 							fmt.Printf("Retry %v : Request Timeout, Retry after 1s\n", retries)
 							time.Sleep(751 * time.Millisecond) // Just choose this number randomly.
 							continue
