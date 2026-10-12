@@ -1,1 +1,7 @@
-{ "type": "module" }
+{
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "^1.4.2",
+    "@types/node": "^26.6.5"
+  }
+}
