@@ -9,7 +9,7 @@ export interface FileInfo {
   dlink: string | null;
 }
 
-async function getFileMetas(AccessToken: string, BD_Headers: Record<string, string>, fidList: FileListItem[], maxRetry = 1) {
+async function getFileMetas(AccessToken: string, BD_Headers: Record<string, string>, fidList: number[], maxRetry = 1) {
   if (!fidList || !fidList.length) throw new Error('not valid fidList');
 
   const fsids = encodeURIComponent(JSON.stringify(fidList));
@@ -58,7 +58,7 @@ async function getFileMetas(AccessToken: string, BD_Headers: Record<string, stri
 }
 
 
-export default async function getDirectLinks(AccessToken: string, BD_Headers: Record<string, string>, fidList: FileListItem[]) {
+export default async function getFileInfo(AccessToken: string, BD_Headers: Record<string, string>, fidList: number[]) {
   // if (retry_count > 2) throw new Error('OverRetryError'); // Too many retries, giving up
   if (!AccessToken) throw new Error('no access_token!!');
 
