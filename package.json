@@ -1,5 +1,14 @@
 {
+  "name": "multi-thread-downloader",
+  "version": "dev",
   "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "bun run --watch src/index.ts"
+  },
+  "dependencies": {
+    "elysia": "latest"
+  },
   "devDependencies": {
     "@types/bun": "^1.4.2",
     "@types/node": "^26.6.5"
