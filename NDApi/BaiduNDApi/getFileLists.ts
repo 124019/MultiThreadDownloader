@@ -38,7 +38,7 @@ export default async function getFileList(dir_path = '/') { // For Root Menu,use
         size: item.size
     }));
     console.log('Successfully get fileList , get %d files&folders', fileList.length);
-    console.log(JSON.stringify(fileList, null, 2));
+    // console.log(JSON.stringify(fileList, null, 2));
     return fileList as FileListItem[];
   } catch (error: unknown) {
     console.error('request failed:', (error as Error).message);
