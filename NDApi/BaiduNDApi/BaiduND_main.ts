@@ -28,13 +28,13 @@ export async function fetchFileList(ND_Path: string) {
     console.log('Baidu Server wasn\'t return anything.');
   }
 
-  let fileIdList: FileListItem[] = [];
+  let fileList: FileListItem[] = [];
   for (const file of (FileList as FileListItem[])) {
     if (file.folder === 0) {
-      fileIdList.push(file);
+      fileList.push(file);
     }
   }
-  console.log("File List: ", fileIdList);
+  console.log("File List: ", fileList);
 
   let FolderList: FileListItem[] = [];
   for (const file of (FileList as FileListItem[])) {
@@ -46,7 +46,11 @@ export async function fetchFileList(ND_Path: string) {
 
   // Get info for all files in the index page END
 
-  return FileList as FileListItem[], FolderList as FileListItem[];
+  let jsonList = {
+    FileList: fileList,
+    FolderList: FolderList
+  };
+  return jsonList;
 }
 
 export async function getDirectLink(FileList: FileListItem[]) {
@@ -65,14 +69,14 @@ export async function getDirectLink(FileList: FileListItem[]) {
   let retry_count = 0;
   try {
     let files = await getFileInfo(AccessToken, BD_Headers, fileIdList);
-    return files;
+    return files as FileInfo[];
   } catch (error) {
     if ((error as Error).message === 'InvalidAccessTokenError') {
       retry_count += 1;
       AccessToken = await refreshAccessToken();
       console.log('Access Token is refreshed.');
       let files = await getFileInfo(AccessToken, BD_Headers, fileIdList);
-      return files;
+      return files as FileInfo[];
     } else {
       console.log('Error:', (error as Error).message);
     }
