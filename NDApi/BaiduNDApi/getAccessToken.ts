@@ -50,7 +50,7 @@ async function getTokenFromRedirect() {
 }
 
 export default async function () {
-  var AccessToken = await getTokenFromRedirect();
+  let AccessToken = await getTokenFromRedirect();
   console.log('Access Token:', AccessToken);
 
   writeFileSync(new URL('./AccessToken.txt', import.meta.url), AccessToken, 'utf-8');

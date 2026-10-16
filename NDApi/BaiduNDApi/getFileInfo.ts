@@ -1,13 +1,4 @@
-import fs from 'fs';
-import type { FileListItem } from './getFileLists';
-
-export interface FileInfo {
-  fs_id: number;
-  filename: string;
-  size: number;
-  document: number; // 1 for folder, 0 for file
-  dlink: string | null;
-}
+import type { FileInfo } from './type.ts';
 
 async function getFileMetas(AccessToken: string, BD_Headers: Record<string, string>, fidList: number[], maxRetry = 1) {
   if (!fidList || !fidList.length) throw new Error('not valid fidList');

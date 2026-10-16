@@ -1,14 +1,6 @@
 import axios from 'axios';
 import * as fs from 'node:fs';
-
-
-export interface FileListItem {
-    name: string;
-    path: string;
-    folder: number; // 1 for folder, 0 for file
-    fid: number;
-    size: number;
-}
+import type { FileListItem } from './type.ts';
 
 export default async function getFileList(dir_path = '/') { // For Root Menu,use '/{folder_name}' to join folders
   

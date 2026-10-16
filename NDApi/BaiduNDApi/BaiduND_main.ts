@@ -5,7 +5,7 @@ import getFileList from './getFileLists.ts';
 import getFileInfo from './getFileInfo.ts';
 import refreshAccessToken from './getAccessToken.ts';
 import fs from 'fs';
-import type { FileListItem } from './getFileLists.ts'
+import type { FileListItem, FileInfo } from './type.ts';
 
 function readLocalHeadersAndCookies() {
   const BD_Headers: Record<string, string> = JSON.parse(
