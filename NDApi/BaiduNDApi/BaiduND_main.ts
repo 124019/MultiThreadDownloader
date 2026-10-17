@@ -1,6 +1,3 @@
-//to do list: 
-// Set error type
-
 import getFileList from './getFileLists.ts';
 import getFileInfo from './getFileInfo.ts';
 import refreshAccessToken from './getAccessToken.ts';
@@ -30,7 +27,7 @@ export async function fetchFileList(ND_Path: string) {
 
   let fileList: FileListItem[] = [];
   for (const file of (FileList as FileListItem[])) {
-    if (file.folder === 0) {
+    if (file.isdir === 0) {
       fileList.push(file);
     }
   }
@@ -38,7 +35,7 @@ export async function fetchFileList(ND_Path: string) {
 
   let FolderList: FileListItem[] = [];
   for (const file of (FileList as FileListItem[])) {
-    if (file.folder === 1) {
+    if (file.isdir === 1) {
       FolderList.push(file);
     }
   }
@@ -56,7 +53,7 @@ export async function fetchFileList(ND_Path: string) {
 export async function getDirectLink(FileList: FileListItem[]) {
   let fileIdList: number[] = [];
   for (const file of FileList) {
-      if (file.folder === 0) {
+      if (file.isdir === 0) {
           fileIdList.push(file.fid);
       }
   };

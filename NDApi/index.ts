@@ -19,7 +19,7 @@ const BaiduND = new Elysia({'prefix': 'BaiduND'})
         FileList: t.Array(t.Object({
           name: t.String(),
           path: t.String(),
-          folder: t.Number(),
+          isdir: t.Number(),
           fid: t.Number(),
           size: t.Number()
         }))

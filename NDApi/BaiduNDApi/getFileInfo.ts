@@ -59,7 +59,7 @@ export default async function getFileInfo(AccessToken: string, BD_Headers: Recor
     fs_id: item.fs_id,
     filename: item.server_filename || item.filename,
     size: item.size,
-    document: item.isdir,
+    isdir: item.isdir,
     dlink: item.dlink ? `${item.dlink}&access_token=${AccessToken}` : null,
   }));
   return fileinfo as FileInfo[];
