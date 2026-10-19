@@ -21,9 +21,10 @@ type FileInfo struct {
 	Dlink    string `json:"dlink"`
 }
 
-func get_file_list(dirPath string, headers map[string]string, platform string) ([]FileListItem, error) { // Platform: "BaiduND" ...
-	FileList := []FileListItem{}
-	FileListResp, err := base.NetRequest("http://127.0.0.1:1242/"+platform+"/filelist", "POST", headers, map[string]interface{}{"ND_Path": dirPath}, 20)
+var baseurl = "http://127.0.0.1:1242/mtd/"
+func get_file_list(dirPath string, platform string) (map[string]any, error) { // Platform: "BaiduND" ...
+	var FileList map[string]any
+	FileListResp, err := base.NetRequest(baseurl+platform+"/filelist", "POST", map[string]string{"User-Agent": "Mozilla/5.0", "Content-Type": "application/json"}, map[string]interface{}{"ND_Path": dirPath}, 20)
 	if err != nil {
 		return nil, fmt.Errorf("get file list error: %v\n", err)
 	}
@@ -33,9 +34,9 @@ func get_file_list(dirPath string, headers map[string]string, platform string) (
 	return FileList, nil
 }
 
-func get_file_info_api(fileList []FileListItem, headers map[string]string, platform string) ([]FileInfo, error) {
+func get_file_info_api(fileList []FileListItem, platform string) ([]FileInfo, error) {
 	FileInfo := []FileInfo{}
-	FileInfoResp, err := base.NetRequest("http://127.0.0.1:1242/"+platform+"/directlink", "POST", headers, fileList, 20)
+	FileInfoResp, err := base.NetRequest(baseurl+platform+"/directlink", "POST", map[string]string{"User-Agent": "Mozilla/5.0"}, fileList, 20)
 	if err != nil {
 		return nil, fmt.Errorf("get direct link error: %v\n", err)
 	}
@@ -43,4 +44,13 @@ func get_file_info_api(fileList []FileListItem, headers map[string]string, platf
 		return nil, fmt.Errorf("unmarshal json data failed: %v\n", err)
 	}
 	return FileInfo, nil
+}
+
+func example() {
+	resp, err := get_file_list("/", "BaiduND")
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+	fmt.Printf("File List: %+v\n", resp)
 }

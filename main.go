@@ -16,24 +16,24 @@ type Interval struct {
 }
 
 
-func makeChunks(total int, step int) []Interval {
+func ChunksIndex(total_size int, chunk_size int) []Interval {
 	var result []Interval
-	for st := 0; st <= total; st += step {
-		ed := st + step - 1
-		if ed > total {
-			ed = total - 1 // first is 0, last is tt - 1
+	for st_byte := 0; st_byte <= total_size; st_byte += chunk_size {
+		ed_byte := st_byte + chunk_size - 1
+		if ed_byte > total_size {
+			ed_byte = total_size - 1 // first is 0, last is total_size - 1
 		}
 		result = append(result, Interval{
 			// no: (st - 1) / step,
-			st: st,
-			ed: ed,
+			st: st_byte,
+			ed: ed_byte,
 		})
 	}
 	// fmt.Println(result)
 	return result
 }
 
-func str_chunk_index(intervals []Interval) []string {
+func bd_str_chunk_index_for(intervals []Interval) []string {
 	result := make([]string, 0, len(intervals))
 	for i := range intervals {
 		Range := fmt.Sprintf("bytes=%d-%d", intervals[i].st, intervals[i].ed)
@@ -116,7 +116,7 @@ func main() {
 	fmt.Printf("Latency: %d ms\n", response.ReqElapsed / 1000000)
 	// Get Latency End
 
-	str_range := str_chunk_index(makeChunks(totalSize, chunkSize))
+	str_range := bd_str_chunk_index_for(ChunksIndex(totalSize, chunkSize))
 	// fmt.Println(chunk)
 	length := len(str_range)
 	fmt.Printf("total chunk: %d\n", length)
