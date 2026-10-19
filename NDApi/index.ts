@@ -2,17 +2,19 @@ import { Elysia, t } from 'elysia'
 import { getDirectLink, fetchFileList } from './BaiduNDApi/BaiduND_main.ts'
 
 const BaiduND = new Elysia({'prefix': 'BaiduND'})
-  .post('/filelist', ({ body, status }) => {
-      return status(200, fetchFileList(body.ND_Path));
-    },
+  .post('/filelist', async ({ body, status }) => {
+    const data = await fetchFileList(body.ND_Path);
+    return status(200, data);
+  },
     {
       body: t.Object({
         ND_Path: t.String()
       })
     }
   )
-  .post('/directlink', ({ body, status }) => {
-      return status(200, getDirectLink(body.FileList));
+  .post('/directlink', async ({ body, status }) => {
+      const data = await getDirectLink(body.FileList);
+      return status(200, data);
     },
     {
       body: t.Object({
