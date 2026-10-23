@@ -1,6 +1,5 @@
 import { Elysia, t } from 'elysia'
 import { getDirectLink, fetchFileList } from './BaiduNDApi/BaiduND_main.ts'
-import type { FileListItem } from './BaiduNDApi/type.ts';
 
 const BaiduND = new Elysia({'prefix': 'BaiduND'})
   .post('/filelist', async ({ body, status }) => {

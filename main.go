@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"regexp"
-	"strconv"
 )
 
 type Interval struct {
@@ -43,69 +41,45 @@ func bd_str_chunk_index_for(intervals []Interval) []string {
 	return result
 }
 
-func get_file_info(headers map[string]string, url string) (int, string, error) {
-	timeout_second := 20
-
-	response, err := base.NetRequest(url, "HEAD", headers, nil, timeout_second)
-	resp := response.RespBody
-	if err != nil {
-		return 0, "", fmt.Errorf("download error: %v\n", err)
-	}
-
-	fmt.Printf("status code: %d\n", response.RespStatusCode)
-	fmt.Println(string(resp))
-
-	var header map[string][]string
-	err = json.Unmarshal(resp, &header)
-	if err != nil {
-		return 0, "", fmt.Errorf("unmarshal json data failed: %v\n", err)
-	}
-	ContentLength := header["Content-Length"][0]
-	ContentDisposition := header["Content-Disposition"][0]
-
-	totalSize, err := strconv.Atoi(ContentLength)
-	if err != nil {
-		return 0, "", fmt.Errorf("convert string to int failed: %v\n", err)
-	}
-	fmt.Printf("total size: %d bytes\n", totalSize) // file size(Bytes)
-	re := regexp.MustCompile(`filename=\"(.+?)\"`)
-	filename := re.FindStringSubmatch(ContentDisposition)[1]
-	fmt.Printf("filename: %s\n", filename)
-	return totalSize, filename, nil
-}
-
 func main() {
 	maxThread := 15
 	chunkSize := 512 * 1024
-	// Example
+	ND_Path := "/我的资源"
+	platform := "BaiduND"
+	// For TEST
 
-	data, err := os.ReadFile("./BaiduNDApi/url.txt")
+	File_FolderList, err := core.GetFileList(ND_Path, platform)
 	if err != nil {
-		fmt.Printf("read file error: %v\n", err)
+		fmt.Printf("Error: %v\n", err)
+		return 
 	}
-	url := string(data)
-	if url == "" {
-		fmt.Printf("url file is empty.")
-	}
+	fmt.Println(File_FolderList) // For TEST
 
-	data, err = os.ReadFile("./BaiduNDApi/RunUrlHeader.json")
+	fileList := File_FolderList.FileList // For TEST : Get all infomation in the list
+
+	file_info_with_url, err := core.GetFileInfo(fileList, platform)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+	fmt.Println(file_info_with_url) // For TEST
+	info0 := file_info_with_url[0] // For TEST : Get one file randomly
+	url := info0.Dlink // For TEST : Get one file randomly
+	totalSize := info0.Size // For TEST : Get one file randomly
+	filename := info0.Filename // For TEST : Get one file randomly
+	fmt.Printf("total size: %d bytes\n", totalSize)
+	fmt.Printf("filename: %s\n", filename)
+
+	baidu_header_data, err := os.ReadFile("./NDApi/BaiduNDApi/RunUrlHeader.json")
 	if err != nil {
 		fmt.Printf("read file error: %v\n", err)
 	}
 	headers := map[string]string{}
-	err = json.Unmarshal(data, &headers)
+	err = json.Unmarshal(baidu_header_data, &headers)
 	if err != nil {
 		fmt.Printf("unmarshal json data failed:while reading headers, %v\n", err)
 		return
 	}
-	
-	totalSize, filename, err := get_file_info(headers, url)
-	if err != nil {
-		fmt.Printf("get file info error: %v\n", err)
-		return
-	}
-	fmt.Printf("total size: %d bytes\n", totalSize)
-	fmt.Printf("filename: %s\n", filename)
 
 	// Get Latency
 	response, err := base.NetRequest("https://d.pcs.baidu.com/", "GET", headers, nil, 30)
