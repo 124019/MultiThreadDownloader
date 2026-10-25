@@ -3,7 +3,7 @@ package core
 import (
 	"encoding/json"
 	"fmt"
-	"MultiThreadDownloader/component/base"
+	"MultiThreadDownloader/comp/base"
 )
 
 type File_FolderList struct{
@@ -49,13 +49,4 @@ func GetFileInfo(fileList []FileListItem, platform string) ([]FileInfo, error) {
 		return nil, fmt.Errorf("unmarshal json data failed (baidu file info with direct link): %v\n", err)
 	}
 	return file_info, nil
-}
-
-func example() {
-	resp, err := GetFileList("/", "BaiduND")
-	if err != nil {
-		fmt.Printf("Error: %v\n", err)
-		return
-	}
-	fmt.Printf("File List: %+v\n", resp)
 }

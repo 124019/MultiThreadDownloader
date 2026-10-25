@@ -1,8 +1,8 @@
 package main
 
 import (
-	"MultiThreadDownloader/component/core"
-	"MultiThreadDownloader/component/base"
+	"MultiThreadDownloader/comp/core"
+	"MultiThreadDownloader/comp/base"
 	"encoding/json"
 	"fmt"
 	"os"

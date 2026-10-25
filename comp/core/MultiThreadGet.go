@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 	"errors"
-	"MultiThreadDownloader/component/base"
+	"MultiThreadDownloader/comp/base"
 )
 
 func downloadpcs(c string) {
