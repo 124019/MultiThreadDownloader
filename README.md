@@ -5,3 +5,5 @@
 我正在学习前端开发，可能会需要很长时间用于设计并实现ui，在发布正式版之前只支持自行配置环境进行源码调试。
 
 本软件可能使用了某些其他Api服务器的一些服务，可能会在一些地方有违规之处，如果违反了你的服务器使用协定或者你作为服务器拥有者不希望我的项目使用你的服务，请在第一时间联系我（包括但不限于提issue），我会在正式版Release发布之前（但愿有那一天）删除使用你的服务的部分或者对你的协议进行合规性兼容。
+
+This project will no longer use web development for the front end and will switch to Flutter instead.
