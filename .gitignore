@@ -1,12 +1,6 @@
-/node_modules
-
-/NDApi/BaiduNDApi/cookies.json
-/NDApi/BaiduNDApi/cookies.txt
-/NDApi/BaiduNDApi/baidu_verify_url.txt
-/NDApi/BaiduNDApi/AccessToken.txt
-/NDApi/BaiduNDApi/url.txt
-/NDApi/BaiduNDApi/test.py
-
 /.idea
+/test
 
-/outdated_files
+# Other .gitignore files
+ # ./frontend/.gitignore
+ # ./NDApi/.gitignore

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"MultiThreadDownloader/comp/core"
-	"MultiThreadDownloader/comp/base"
+	"MultiThreadDownloader/src/core"
+	"MultiThreadDownloader/src/lib"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -82,7 +82,7 @@ func main() {
 	}
 
 	// Get Latency
-	response, err := base.NetRequest("https://d.pcs.baidu.com/", "GET", headers, nil, 30)
+	response, err := lib.NetRequest("https://d.pcs.baidu.com/", "GET", headers, nil, 30)
 	if err != nil {
 		fmt.Printf("get Latency error: %v\n", err)
 		return
