@@ -10,7 +10,7 @@ const BaiduND = new Elysia({'prefix': 'BaiduND'})
     {
       body: t.Object({
         ND_Path: t.String()
-      })
+      }, { additionalProperties: false })
     }
   )
   .post('/directlink', async ({ body, status }) => {
@@ -25,10 +25,10 @@ const BaiduND = new Elysia({'prefix': 'BaiduND'})
           isdir: t.Number(),
           fid: t.Number(),
           size: t.Number()
-        }))
-      })
-    }
-  )
+        }, { additionalProperties: false })
+      )
+    }, { additionalProperties: false })
+  })
 
 const QuarkND = new Elysia({'prefix': 'QuarkND'})
 
