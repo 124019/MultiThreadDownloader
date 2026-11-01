@@ -1,5 +1,5 @@
 node_modules
 
-api/BaiduNDApi/cookies.txt
-api/BaiduNDApi/baidu_verify_url.txt
-api/BaiduNDApi/AccessToken.txt
+api/official_api/BaiduNDApi/cookies.txt
+api/official_api/BaiduNDApi/baidu_verify_url.txt
+api/official_api/BaiduNDApi/AccessToken.txt

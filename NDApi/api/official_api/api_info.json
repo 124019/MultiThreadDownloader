@@ -1,0 +1,22 @@
+{
+    "app": "MTD",
+    "api_name": "Official API",
+    "root_path": "/official_api",
+    "license": "GNU Affero General Public License v3.0",
+    "netdisk_support": ["BaiduNetdisk"],
+    "version": "beta",
+    "BaiduNetdisk_support": {
+        "platform" : "BaiduNetdisk",
+        "path": "/BaiduNDApi",
+        "features": ["filelist", "directlink"], 
+        "main_file_path": "/BaiduND_main.ts",
+        "type_file_path": "type.ts"
+    },
+    "QuarkNetdisk_support": {
+        "platform" : "QuarkNetdisk",
+        "path": "/QuarkNDApi",
+        "features": [],
+        "main_file_path": "",
+        "type_file_path": ""
+    }
+}
