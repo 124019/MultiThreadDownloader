@@ -45,9 +45,31 @@ console.log(JSON.stringify(api_infos, null, 2));
 
 const api_info = api_infos[0];// Temporary code, just get the first api. It will be More complex in the future
 
+import type * as BaiduNDType from './api/official_api/BaiduNDApi/BaiduND_main.ts'
+import type * as BaiduFileType from './api/official_api/BaiduNDApi/type.ts'
 
-import { getDirectLink, fetchFileList } from './api/official_api/BaiduNDApi/BaiduND_main.ts'
-import type * as BaiduNDType from './api/official_api/BaiduNDApi/type.ts'
+type BaiduNDShape = {
+  getDirectLink: typeof BaiduNDType.getDirectLink | null
+  fetchFileList: typeof BaiduNDType.fetchFileList | null
+}
+
+const { getDirectLink, fetchFileList } = await (async (): Promise<BaiduNDShape> => {
+  const EMPTY: BaiduNDShape = { getDirectLink: null, fetchFileList: null }
+  if (!api_info.support_list.includes('BaiduND')) {
+    return EMPTY;
+  }
+  try {
+    if (api_info.support_list.includes('BaiduND')) {
+      console.log('BaiduND is supported');
+      const module = await import('./api/official_api/BaiduNDApi/BaiduND_main.ts')
+      return { getDirectLink: module.getDirectLink, fetchFileList: module.fetchFileList }
+    }
+  } catch (err) {
+    console.warn("Api Core is corrupted: The api_info file is incorrect or Api Core is incomplete");
+    return EMPTY;
+  }
+  return EMPTY;
+})();
 
 const BaiduND = new Elysia({'prefix': 'BaiduND'})
   .post('/filelist', async ({ body, status }) => {
@@ -56,6 +78,9 @@ const BaiduND = new Elysia({'prefix': 'BaiduND'})
       } else if (!(api_info.support_details.BaiduND.features).includes('filelist')) {
         return status(404, { message: 'BaiduND filelist feature is not supported' });
       } else {
+        if (fetchFileList === null) {
+          return status(500, { message: 'BaiduND filelist feature is not implemented: The api_info file is incorrect or Api Core is incomplete' });
+        };
         const data = await fetchFileList(body.ND_Path as string);
         return status(200, data);
       }
@@ -72,7 +97,10 @@ const BaiduND = new Elysia({'prefix': 'BaiduND'})
       } else if (!(api_info.support_details.BaiduND.features).includes('directlink')) {
         return status(404, { message: 'BaiduND directlink feature is not supported' });
       } else {
-        const data = await getDirectLink(body.FileList as BaiduNDType.FileListItem[]);
+        if (getDirectLink === null) {
+          return status(500, { message: 'BaiduND directlink feature is not implemented: The api_info file is incorrect or Api Core is incomplete' });
+        };
+        const data = await getDirectLink(body.FileList as BaiduFileType.FileListItem[]);
         return status(200, data);
       }
     },
