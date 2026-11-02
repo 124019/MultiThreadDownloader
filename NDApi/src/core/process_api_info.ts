@@ -75,10 +75,10 @@ export default async function process_api_info(apiInfo: Record<string, unknown>)
 
             const features = Object.hasOwn(each_platform_details, "features") ? each_platform_details["features"] : null;
             if (!isStringArray(features)) {
-                throw new Error(`The key 'featrues' in the key '${key}_support' is invalid`);
+                throw new Error(`The key 'features' in the key '${key}_support' is invalid`);
             };
             if (features.length === 0) {
-                throw new Error(`The key 'featrues' in the key '${key}_support' is empty`);
+                throw new Error(`The key 'features' in the key '${key}_support' is empty`);
             };
 
             if (platform in support_details) {

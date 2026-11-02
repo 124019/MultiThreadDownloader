@@ -69,7 +69,7 @@ const BaiduND = new Elysia({'prefix': 'BaiduND'})
   .post('/directlink', async ({ body, status }) => {
       if (!api_info.support_list.includes('BaiduND')) {
         return status(404, { message: 'BaiduND is not supported' });
-      } else if (!(api_info.support_details.BaiduND.features).includes('directLlink')) {
+      } else if (!(api_info.support_details.BaiduND.features).includes('directlink')) {
         return status(404, { message: 'BaiduND directlink feature is not supported' });
       } else {
         const data = await getDirectLink(body.FileList as BaiduNDType.FileListItem[]);
