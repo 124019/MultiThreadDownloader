@@ -47,6 +47,7 @@ const api_info = api_infos[0];// Temporary code, just get the first api. It will
 
 import type * as BaiduNDType from './api/official_api/BaiduNDApi/BaiduND_main.ts'
 import type * as BaiduFileType from './api/official_api/BaiduNDApi/type.ts'
+// import { fetchFileList, getDirectLink } from './api/official_api/BaiduNDApi/BaiduND_main.ts'
 
 type BaiduNDShape = {
   getDirectLink: typeof BaiduNDType.getDirectLink | null
@@ -55,31 +56,35 @@ type BaiduNDShape = {
 
 const { getDirectLink, fetchFileList } = await (async (): Promise<BaiduNDShape> => {
   const EMPTY: BaiduNDShape = { getDirectLink: null, fetchFileList: null }
-  if (!api_info.support_list.includes('BaiduND')) {
+  if (!api_info.support_list.includes('BaiduNetdisk')) {
     return EMPTY;
   }
   try {
-    if (api_info.support_list.includes('BaiduND')) {
-      console.log('BaiduND is supported');
+    if (api_info.support_list.includes('BaiduNetdisk')) {
+      console.log('BaiduNetdisk is supported');
       const module = await import('./api/official_api/BaiduNDApi/BaiduND_main.ts')
       return { getDirectLink: module.getDirectLink, fetchFileList: module.fetchFileList }
+    } else {
+      console.log('BaiduNetdisk is not supported');
     }
   } catch (err) {
     console.warn("Api Core is corrupted: The api_info file is incorrect or Api Core is incomplete");
+    console.log("Api Core is corrupted: The api_info file is incorrect or Api Core is incomplete");
     return EMPTY;
   }
+  console.log('BaiduNetdisk is not supported: EMPTY');
   return EMPTY;
 })();
 
-const BaiduND = new Elysia({'prefix': 'BaiduND'})
+const BaiduNetdisk = new Elysia({'prefix': 'BaiduNetdisk'})
   .post('/filelist', async ({ body, status }) => {
-      if (!api_info.support_list.includes('BaiduND')) {
-        return status(404, { message: 'BaiduND is not supported' });
-      } else if (!(api_info.support_details.BaiduND.features).includes('filelist')) {
-        return status(404, { message: 'BaiduND filelist feature is not supported' });
+      if (!api_info.support_list.includes('BaiduNetdisk')) {
+        return status(404, { message: `BaiduNetdisk is not supported, support list: ${api_info.support_list}` });
+      } else if (!(api_info.support_details.BaiduNetdisk.features).includes('filelist')) {
+        return status(404, { message: `BaiduNetdisk filelist feature is not supported, supported features: ${api_info.support_details.BaiduNetdisk.features}` });
       } else {
         if (fetchFileList === null) {
-          return status(500, { message: 'BaiduND filelist feature is not implemented: The api_info file is incorrect or Api Core is incomplete' });
+          return status(500, { message: `BaiduNetdisk filelist feature is not implemented: The api_info file is incorrect or Api Core is incomplete: ${api_info.support_details.BaiduNetdisk.features}` });
         };
         const data = await fetchFileList(body.ND_Path as string);
         return status(200, data);
@@ -92,13 +97,13 @@ const BaiduND = new Elysia({'prefix': 'BaiduND'})
     }
   )
   .post('/directlink', async ({ body, status }) => {
-      if (!api_info.support_list.includes('BaiduND')) {
-        return status(404, { message: 'BaiduND is not supported' });
-      } else if (!(api_info.support_details.BaiduND.features).includes('directlink')) {
-        return status(404, { message: 'BaiduND directlink feature is not supported' });
+      if (!api_info.support_list.includes('BaiduNetdisk')) {
+        return status(404, { message: 'BaiduNetdisk is not supported' });
+      } else if (!(api_info.support_details.BaiduNetdisk.features).includes('directlink')) {
+        return status(404, { message: 'BaiduNetdisk directlink feature is not supported' });
       } else {
         if (getDirectLink === null) {
-          return status(500, { message: 'BaiduND directlink feature is not implemented: The api_info file is incorrect or Api Core is incomplete' });
+          return status(500, { message: 'BaiduNetdisk directlink feature is not implemented: The api_info file is incorrect or Api Core is incomplete' });
         };
         const data = await getDirectLink(body.FileList as BaiduFileType.FileListItem[]);
         return status(200, data);
@@ -117,9 +122,17 @@ const BaiduND = new Elysia({'prefix': 'BaiduND'})
     }, { additionalProperties: false })
   })
 
-const QuarkND = new Elysia({'prefix': 'QuarkND'})
+const QuarkNetdisk = new Elysia({'prefix': 'QuarkNetdisk'})
 
-const app = new Elysia({'prefix': 'mtd'})
-  .use(BaiduND)
-  .use(QuarkND)
+const app = new Elysia({ prefix: '/mtd' })
+  .onError(({ code, error, path, set }) => {
+    console.error('[Elysia Error]', code, path, error);
+    set.headers['content-type'] = 'application/json';
+    return { code, message: String(error) };
+  })
+  .use(BaiduNetdisk)
+  .use(QuarkNetdisk)
+  .listen(1242)
+  .use(BaiduNetdisk)
+  .use(QuarkNetdisk)
   .listen(1242)

@@ -32,6 +32,7 @@ func GetFileList(dirPath string, platform string) (File_FolderList, error) {
 	if err != nil {
 		return respList, fmt.Errorf("get file list error: %v\n", err)
 	}
+	fmt.Println("Status Code of Baidu File and Folder List : ",FileListResp.RespStatusCode)
 	if err := json.Unmarshal(FileListResp.RespBody, &respList); err != nil {
 		return respList, fmt.Errorf("unmarshal json data (baidu file and folder list) failed: %v\n", err)
 	}
@@ -45,6 +46,7 @@ func GetFileInfo(fileList []FileListItem, platform string) ([]FileInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("get direct link error: %v\n", err)
 	}
+	fmt.Println("Status Code of Baidu File Info: ",FileInfoResp.RespStatusCode)
 	if err := json.Unmarshal(FileInfoResp.RespBody, &file_info); err != nil {
 		return nil, fmt.Errorf("unmarshal json data failed (baidu file info with direct link): %v\n", err)
 	}

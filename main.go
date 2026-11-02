@@ -44,8 +44,8 @@ func bd_str_chunk_index_for(intervals []Interval) []string {
 func main() {
 	maxThread := 15
 	chunkSize := 512 * 1024
-	ND_Path := "/我的资源"
-	platform := "BaiduND"
+	ND_Path := "/"
+	platform := "BaiduNetdisk"
 	// For TEST
 
 	File_FolderList, err := core.GetFileList(ND_Path, platform)
@@ -70,7 +70,7 @@ func main() {
 	fmt.Printf("total size: %d bytes\n", totalSize)
 	fmt.Printf("filename: %s\n", filename)
 
-	baidu_header_data, err := os.ReadFile("./NDApi/BaiduNDApi/RunUrlHeader.json")
+	baidu_header_data, err := os.ReadFile("./NDApi/static/headers/Baidu_fetchURL_header.json")
 	if err != nil {
 		fmt.Printf("read file error: %v\n", err)
 	}

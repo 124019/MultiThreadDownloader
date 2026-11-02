@@ -51,31 +51,19 @@ export async function fetchFileList(ND_Path: string) {
 }
 
 export async function getDirectLink(FileList: FileListItem[]) {
-  let fileIdList: number[] = [];
-  for (const file of FileList) {
-      if (file.isdir === 0) {
-          fileIdList.push(file.fid);
-      }
-  };
-  console.log("File ids", fileIdList);
+  const fileIdList = FileList.filter(f => f.isdir === 0).map(f => f.fid);
+  console.log('File ids', fileIdList);
+  if (fileIdList.length === 0) return [];
 
-  let BD_Headers: Record<string, string> = readLocalHeadersAndCookies();
-
+  const BD_Headers = readLocalHeadersAndCookies();
   let AccessToken = fs.readFileSync(new URL('./AccessToken.txt', import.meta.url), 'utf-8');
 
-  let retry_count = 0;
   try {
-    let files = await getFileInfo(AccessToken, BD_Headers, fileIdList);
-    return files as FileInfo[];
+    return await getFileInfo(AccessToken, BD_Headers, fileIdList);
   } catch (error) {
-    if ((error as Error).message === 'InvalidAccessTokenError') {
-      retry_count += 1;
-      AccessToken = await refreshAccessToken();
-      console.log('Access Token is refreshed.');
-      let files = await getFileInfo(AccessToken, BD_Headers, fileIdList);
-      return files as FileInfo[];
-    } else {
-      console.log('Error:', (error as Error).message);
-    }
+    if ((error as Error).message !== 'InvalidAccessTokenError') throw error; // 别吞
+    AccessToken = await refreshAccessToken();
+    console.log('Access Token is refreshed.');
+    return await getFileInfo(AccessToken, BD_Headers, fileIdList);          // 失败会正常冒泡
   }
 }

@@ -50,10 +50,13 @@ async function getTokenFromRedirect() {
 }
 
 export default async function () {
-  let AccessToken = await getTokenFromRedirect();
+  const AccessToken = await getTokenFromRedirect();
   console.log('Access Token:', AccessToken);
 
-  writeFileSync(new URL('./AccessToken.txt', import.meta.url), AccessToken, 'utf-8');
-  console.log('Access Token saved to AccessToken.txt');
-  return AccessToken;
+  if (!AccessToken || typeof AccessToken !== 'string') {
+    throw new Error('Failed to refresh AccessToken: getTokenFromRedirect returned empty');
+  }
+
+  writeFileSync(new URL('./AccessToken.txt', import.meta.url), AccessToken.trim(), 'utf-8');
+  return AccessToken.trim();
 }

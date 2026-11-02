@@ -16,12 +16,12 @@ async function getFileMetas(AccessToken: string, BD_Headers: Record<string, stri
     });
     clearTimeout(timeoutId);
 
-    if (!response.ok) {
-      throw new Error(`HTTP request error: ${response.status} - ${response.statusText}`);
-    }
-
     if (response.status === 400) { // Invalid access_token or expired access_token
       throw new Error('InvalidAccessTokenError');
+    }
+
+    if (!response.ok) {
+      throw new Error(`HTTP request error: ${response.status} - ${response.statusText}`);
     }
 
     const data = await response.json();
@@ -53,6 +53,9 @@ export default async function getFileInfo(AccessToken: string, BD_Headers: Recor
   // if (retry_count > 2) throw new Error('OverRetryError'); // Too many retries, giving up
   if (!AccessToken) throw new Error('no access_token!!');
 
+  for (const [k, v] of Object.entries(BD_Headers)) {
+    console.log('[TEST-HDR]', k, typeof v, JSON.stringify(v).slice(0, 80));
+  }
   const list = await getFileMetas(AccessToken, BD_Headers, fidList);
   // const files = list.filter(item => item.isdir !== 1);
   const fileinfo = list.map((item: any) => ({
