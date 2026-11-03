@@ -13,16 +13,17 @@ The backend will be written in Golang and TypeScript. Go for downloader and TS f
 ### Development Progress:
 
 ##### Downloader
-- downloader `Go` `alpha`
+- downloader `Go` `dev`
 - ~~Main Backend Interface Entry Points~~ `planned`
 
 ##### Netdisk Apis 
 - Netdisk Api Interface Entry Points `ElysiaJS / Bun TS` `beta`
-- Baidu Netdisk Api Plugin Core `Bun TS` `beta`
+- Baidu Netdisk Api Plugin Core `Bun TS` `alpha`
 - ~~Quark Netdisk Api Plugin Core~~ `planned`
 
 ##### Frontend
 - ~~Windows AMD64 Desktop Frontend~~ `Flutter / Dart` `dev`
 
 ### Development Document List
-- frontend/README.md -> For develop the frontend.
+- /frontend/README.md -> For develop the frontend.
+- /doc

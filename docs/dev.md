@@ -5,3 +5,5 @@
 
 ### To load the frontend
 **The frontend is still developing and can't be used**
+`cd frontend`
+`flutter run -d windows`
