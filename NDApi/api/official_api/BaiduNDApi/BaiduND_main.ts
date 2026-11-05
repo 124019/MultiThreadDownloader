@@ -60,9 +60,9 @@ export async function getDirectLink(FileList: FileListItem[]) {
   try {
     return await getFileInfo(AccessToken, BD_Headers, fileIdList);
   } catch (error) {
-    if ((error as Error).message !== 'InvalidAccessTokenError') throw error; // 别吞
+    if ((error as Error).message !== 'InvalidAccessTokenError') throw error;
     AccessToken = await refreshAccessToken();
     console.log('Access Token is refreshed.');
-    return await getFileInfo(AccessToken, BD_Headers, fileIdList);          // 失败会正常冒泡
+    return await getFileInfo(AccessToken, BD_Headers, fileIdList);
   }
 }

@@ -26,7 +26,7 @@ export default async function getFileList(dir_path = '/') { // For Root Menu,use
     }
     const DataList = data.list || [];
 
-    const fileList = DataList.map((item: any) => ({
+    const fileList = DataList.map((item: { server_filename: string; path: string; isdir: number; fs_id: string; size: number }) => ({
         name: item.server_filename,
         path: item.path,
         isdir: item.isdir,
@@ -36,7 +36,7 @@ export default async function getFileList(dir_path = '/') { // For Root Menu,use
     console.log('Successfully get fileList , get %d files&folders', fileList.length);
     // console.log(JSON.stringify(fileList, null, 2));
     return fileList as FileListItem[];
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('request failed:', (error as Error).message);
   }
 }

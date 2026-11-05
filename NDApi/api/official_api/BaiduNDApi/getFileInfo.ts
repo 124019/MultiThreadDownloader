@@ -58,7 +58,7 @@ export default async function getFileInfo(AccessToken: string, BD_Headers: Recor
   }
   const list = await getFileMetas(AccessToken, BD_Headers, fidList);
   // const files = list.filter(item => item.isdir !== 1);
-  const fileinfo = list.map((item: any) => ({
+  const fileinfo = list.map((item: { fs_id: number, server_filename: string, filename: string, size: number, isdir: number, dlink: string }) => ({
     fs_id: item.fs_id,
     filename: item.server_filename || item.filename,
     size: item.size,
