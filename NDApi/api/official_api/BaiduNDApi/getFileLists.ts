@@ -1,16 +1,14 @@
 import axios from 'axios';
-import * as fs from 'node:fs';
 import type { FileListItem } from './type.ts';
-import { readFileSync } from 'fs';
 
 export default async function getFileList(dir_path = '/') { // For Root Menu,use '/{folder_name}' to join folders
   
-  const AccessToken = fs.readFileSync(new URL('./AccessToken.txt', import.meta.url), 'utf-8');
+  const AccessToken = await Bun.file(new URL('./AccessToken.txt', import.meta.url)).text();
 
   const url = `https://pan.baidu.com/rest/2.0/xpan/file?method=list&access_token=${AccessToken}&dir=${encodeURIComponent(dir_path)}`;
   console.log('request URL:', url);
   
-  const cookies = readFileSync(new URL('./cookies.txt', import.meta.url), 'utf-8');
+  const cookies = await Bun.file(new URL('./cookies.txt', import.meta.url)).text();
   console.log('Cookies:', cookies);
   try {
     const response = await axios.get(url, {
