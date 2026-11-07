@@ -4,9 +4,7 @@ import refreshAccessToken from './getAccessToken.ts';
 import type { FileListItem } from './type.ts';
 
 async function readLocalHeadersAndCookies() {
-  const BD_Headers: Record<string, string> = JSON.parse(
-    await Bun.file(new URL('./BD_Headers.json', import.meta.url)).json()
-  ) as Record<string, string>;
+  const BD_Headers: Record<string, string> = await Bun.file(new URL('./BD_Headers.json', import.meta.url)).json()
   const BD_Cookies = await Bun.file(new URL('./cookies.txt', import.meta.url)).text();
   BD_Headers['cookie'] = BD_Cookies;
   // Read the Cookies and Headers from the local files
