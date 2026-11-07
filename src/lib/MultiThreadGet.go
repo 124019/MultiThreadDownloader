@@ -1,11 +1,11 @@
-package core
+package lib
 
 import (
 	"fmt"
 	"sync"
 	"time"
 	"errors"
-	"MultiThreadDownloader/src/lib"
+	"MultiThreadDownloader/src/core"
 )
 
 func downloadpcs(c string) {
@@ -13,7 +13,7 @@ func downloadpcs(c string) {
 	fmt.Println("Done: ", c)
 }
 
-func MultiTGet(url string, headers map[string]string, maxThread int, maxRetry int, cnk []string) error {
+func MultiTGet(url string, headers map[string]string, maxThread int, maxRetry int, cnk []core.CHUNK_Range) error { // cnk is the chunk of the file
 	single_timeout := 2
 	// var cnk []string = []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20"}
 	// maxThread := 5
@@ -27,7 +27,7 @@ func MultiTGet(url string, headers map[string]string, maxThread int, maxRetry in
 	wg.Add(1)
 	go func() {
 		for _, chunk := range cnk {
-			c <- chunk
+			c <- chunk.Header
 		}
 		wg.Done()
 		close(c)
@@ -45,10 +45,10 @@ func MultiTGet(url string, headers map[string]string, maxThread int, maxRetry in
 				retries := 0
 				for {
 					reqheader["Range"] = chunk
-					_, err := lib.NetRequest(url, "GET", reqheader, nil, single_timeout)
+					_, err := core.NetRequest(url, "GET", reqheader, nil, single_timeout)
 					retries++
 					if retries < maxRetry + 1 {
-						if errors.Is(err, lib.ErrorRequestTimeout) {
+						if errors.Is(err, core.ErrorRequestTimeout) {
 							fmt.Printf("Retry %v : Request Timeout, Retry after 1s\n", retries)
 							time.Sleep(751 * time.Millisecond) // Just choose this number randomly.
 							continue
