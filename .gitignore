@@ -1,5 +1,6 @@
 /.idea
 /test
+/download
 
 # Other .gitignore files
  # ./frontend/.gitignore

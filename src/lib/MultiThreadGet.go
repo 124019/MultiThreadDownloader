@@ -13,59 +13,102 @@ func downloadpcs(c string) {
 	fmt.Println("Done: ", c)
 }
 
-func MultiTGet(url string, headers map[string]string, maxThread int, maxRetry int, cnk []core.CHUNK_Range) error { // cnk is the chunk of the file
-	single_timeout := 2
-	// var cnk []string = []string{"1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20"}
-	// maxThread := 5
-	// example
+type MultiGetConfig struct {
+	WriteTo            FixedSizeFile
+	RetryTimeInterval  time.Duration
+	MaxRetry           int
+	MaxThread 		   int
+	Headers            map[string]string
+	SingleChunkTimeout int
+}
 
+type Writer struct {
+	chunk core.CHUNK_Range
+	data  []byte
+}
+
+func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) error { // cnk is the chunk of the file
 	start := time.Now()
 	var wg sync.WaitGroup
-	c := make(chan string, 5)
-	errChan := make(chan error, maxThread) // Channel to capture errors
+	var writerWG sync.WaitGroup
+	c := make(chan core.CHUNK_Range, 5)
+	wr := make(chan Writer)
+	errChan := make(chan error, config.MaxThread) // Channel to capture errors
 
 	wg.Add(1)
 	go func() {
 		for _, chunk := range cnk {
-			c <- chunk.Header
+			c <- chunk
 		}
 		wg.Done()
 		close(c)
 	}()
 
-	for i := 0; i < maxThread; i++ {
+	writerWG.Add(1)
+	go func() {
+		defer writerWG.Done()
+		for {
+			writer, open := <- wr
+			if !open {
+				break
+			}
+			fmt.Printf("writer header: %v\n", writer.chunk)
+			if err := config.WriteTo.WritePlaceholder(writer.chunk, writer.data); err != nil {
+				errChan <- err
+				return
+			}
+			continue
+		}
+		fmt.Println("Done: MultiThreadGet")
+	}()
+
+	for i := 0; i < config.MaxThread; i++ {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			reqheader := make(map[string]string, len(headers))
-			for k, v := range headers {
+			reqheader := make(map[string]string, len(config.Headers))
+			for k, v := range config.Headers {
 				reqheader[k] = v
 			}
 			for chunk := range c {
 				retries := 0
 				for {
-					reqheader["Range"] = chunk
-					_, err := core.NetRequest(url, "GET", reqheader, nil, single_timeout)
+					reqheader["Range"] = chunk.Header
+					resp, err := core.NetRequest(url, "GET", reqheader, nil, config.SingleChunkTimeout)
+					if len(resp.RespBody) != chunk.Ed - chunk.St + 1 {
+						fmt.Printf("Not Correct byte number: chunk %v\n, Expected %v, Got %v\n", chunk.Header, chunk.Ed - chunk.St + 1, len(resp.RespBody))
+						fmt.Printf("resp body: %v\n resp end", resp.RespBody)
+					} else {
+						fmt.Printf("Correct byte number: chunk %v\n", chunk.Header)
+						// config.WriteTo.WritePlaceholder(chunk, resp.RespBody)
+						wr <- Writer{chunk: chunk, data: resp.RespBody}
+					}
 					retries++
-					if retries < maxRetry + 1 {
+					if retries < config.MaxRetry + 1 {
 						if errors.Is(err, core.ErrorRequestTimeout) {
-							fmt.Printf("Retry %v : Request Timeout, Retry after 1s\n", retries)
-							time.Sleep(751 * time.Millisecond) // Just choose this number randomly.
+							fmt.Printf("Retry %v : Request Timeout(chunk %v), Retry after 1s\n", retries, chunk.Header)
+							time.Sleep(config.RetryTimeInterval)
 							continue
 						}else if err != nil {
 							errChan <- fmt.Errorf("download error: %w", err)
 							return
 						}
 					} else {
-						errChan <- fmt.Errorf("Too many retries: %v", maxRetry)
+						errChan <- fmt.Errorf("Too many retries: %v", config.MaxRetry)
 					}
 					break
 				}
-			} // For testing, it will return nothing
+			}
 		}()
 	}
 
+	go func() {
+		wg.Wait()
+		close(wr)
+	}()
+
 	wg.Wait()
+	writerWG.Wait()
 	close(errChan)
 	fmt.Println("MultiThreaD elapsed time:", time.Since(start))
 	for err := range errChan {
