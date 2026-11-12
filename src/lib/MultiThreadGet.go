@@ -1,11 +1,11 @@
 package lib
 
 import (
+	"MultiThreadDownloader/src/core"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
-	"errors"
-	"MultiThreadDownloader/src/core"
 )
 
 func downloadpcs(c string) {
@@ -27,7 +27,8 @@ type Writer struct {
 	data  []byte
 }
 
-func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) error { // cnk is the chunk of the file
+func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) (bool, []error) { // cnk is the chunk of the file
+	var success_multiget bool
 	start := time.Now()
 	var wg sync.WaitGroup
 	var writerWG sync.WaitGroup
@@ -55,11 +56,11 @@ func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) error 
 			fmt.Printf("writer header: %v\n", writer.chunk)
 			if err := config.WriteTo.WritePlaceholder(writer.chunk, writer.data); err != nil {
 				errChan <- err
-				fmt.Println("Failed in writing the chunk in the Storange.")
-				return
+				fmt.Println("! Failed in writing the chunk in the Storange.")
 			}
 			continue
 		}
+		success_multiget = true
 		fmt.Println("Done: MultiThreadGet")
 	}()
 
@@ -76,9 +77,11 @@ func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) error 
 				for {
 					reqheader["Range"] = chunk.Header
 					resp, err := core.NetRequest(url, "GET", reqheader, nil, config.SingleChunkTimeout)
+					var correct_bite_number bool
 					if len(resp.RespBody) != chunk.Ed - chunk.St + 1 {
-						fmt.Printf("Not Correct byte number: chunk %v\n, Expected %v, Got %v\n", chunk.Header, chunk.Ed - chunk.St + 1, len(resp.RespBody))
-						fmt.Printf("resp body: %v\n resp end", resp.RespBody)
+						fmt.Printf("! Not Correct byte number: chunk %v\n, Expected %v, Got %v\n", chunk.Header, chunk.Ed - chunk.St + 1, len(resp.RespBody))
+						fmt.Printf("! ! resp body: %v\n resp end", resp.RespBody)
+						correct_bite_number = true
 					} else {
 						fmt.Printf("Correct byte number: chunk %v\n", chunk.Header)
 						// config.WriteTo.WritePlaceholder(chunk, resp.RespBody)
@@ -86,7 +89,7 @@ func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) error 
 					}
 					retries++
 					if retries < config.MaxRetry + 1 {
-						if errors.Is(err, core.ErrorRequestTimeout) {
+						if errors.Is(err, core.ErrorRequestTimeout) || correct_bite_number {
 							fmt.Printf("Retry %v : Request Timeout(chunk %v), Retry after 1s\n", retries, chunk.Header)
 							time.Sleep(config.RetryTimeInterval)
 							continue
@@ -112,8 +115,15 @@ func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) error 
 	writerWG.Wait()
 	close(errChan)
 	fmt.Println("MultiThreaD elapsed time:", time.Since(start))
-	for err := range errChan {
-		return err
+	var err []error
+	for {
+		each_err, open := <- errChan
+		if !open {
+			break
+		}
+		if each_err != nil {
+			err = append(err, each_err)
+		}
 	}
-	return nil
+	return success_multiget, err
 }
