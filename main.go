@@ -13,7 +13,7 @@ import (
 
 
 var maxThread = 15
-var chunkSize = 512 * 1024
+var chunkSize = 64 * 1024
 var ND_Path = "/我的资源/爱言叶5动态素材包" // root path : "/" 
 var platform = "BaiduNetdisk"
 // For TEST, it will be post by frontend, but now we just hardcode it here.

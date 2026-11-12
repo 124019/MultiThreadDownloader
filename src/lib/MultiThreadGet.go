@@ -55,6 +55,7 @@ func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) error 
 			fmt.Printf("writer header: %v\n", writer.chunk)
 			if err := config.WriteTo.WritePlaceholder(writer.chunk, writer.data); err != nil {
 				errChan <- err
+				fmt.Println("Failed in writing the chunk in the Storange.")
 				return
 			}
 			continue
