@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia'
 import { join } from 'node:path'
-import  process_api_info from './src/core/process_api_info.ts'
-import type { ProcessedApiInfo } from './src/core/process_api_info.ts';
+import  process_api_info from './src/lib/process_api_info.ts'
+import type { ProcessedApiInfo } from './src/lib/process_api_info.ts';
 
 
 async function GetAllApiInfos(): Promise<Array<ProcessedApiInfo>> {

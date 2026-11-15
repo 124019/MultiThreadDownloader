@@ -1,5 +1,5 @@
-import isRecord from "../lib/IsRecord"
-import { isString, isStringArray } from "../lib/IsStringORStringArray"
+import isRecord from "../core/IsRecord"
+import { isString, isStringArray } from "../core/IsStringORStringArray"
 
 export interface NetdiskSupportDetail {
     platform: string;

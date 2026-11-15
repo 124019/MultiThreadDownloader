@@ -1,9 +1,9 @@
-package core
+package fetchApi
 
 import (
 	"encoding/json"
 	"fmt"
-	"MultiThreadDownloader/src/lib"
+	"MultiThreadDownloader/src/core"
 )
 
 type File_FolderList struct{
@@ -28,7 +28,7 @@ type FileInfo struct {
 var baseurl = "http://127.0.0.1:1242/mtd/"
 func GetFileList(dirPath string, platform string) (File_FolderList, error) {
 	var respList File_FolderList
-	FileListResp, err := lib.NetRequest(baseurl+platform+"/filelist", "POST", map[string]string{"User-Agent": "Mozilla/5.0", "Content-Type": "application/json"}, map[string]interface{}{"ND_Path": dirPath}, 20)
+	FileListResp, err := core.NetRequest(baseurl+platform+"/filelist", "POST", map[string]string{"User-Agent": "Mozilla/5.0", "Content-Type": "application/json"}, map[string]interface{}{"ND_Path": dirPath}, 20)
 	if err != nil {
 		return respList, fmt.Errorf("get file list error: %v\n", err)
 	}
@@ -42,7 +42,7 @@ func GetFileList(dirPath string, platform string) (File_FolderList, error) {
 func GetFileInfo(fileList []FileListItem, platform string) ([]FileInfo, error) {
 	var file_info []FileInfo
 	fileListInOne := map[string]any{ "FileList": fileList }
-	FileInfoResp, err := lib.NetRequest(baseurl+platform+"/directlink", "POST", map[string]string{"User-Agent": "Mozilla/5.0", "Content-Type": "application/json"}, fileListInOne, 20)
+	FileInfoResp, err := core.NetRequest(baseurl+platform+"/directlink", "POST", map[string]string{"User-Agent": "Mozilla/5.0", "Content-Type": "application/json"}, fileListInOne, 20)
 	if err != nil {
 		return nil, fmt.Errorf("get direct link error: %v\n", err)
 	}

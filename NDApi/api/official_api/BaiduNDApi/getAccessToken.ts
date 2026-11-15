@@ -1,11 +1,9 @@
 import axios from 'axios';
-import { readFileSync } from 'fs';
-import { writeFileSync } from 'fs';
 
-const cookies = readFileSync(new URL('./cookies.txt', import.meta.url), 'utf-8');
+const cookies = await Bun.file(new URL('./cookies.txt', import.meta.url)).text();
 console.log('Cookies:', cookies);
 
-const baidu_verify_url = readFileSync(new URL('./baidu_verify_url.txt', import.meta.url), 'utf-8');
+const baidu_verify_url = await Bun.file(new URL('./baidu_verify_url.txt', import.meta.url)).text();
 console.log('Baidu Verify URL:', baidu_verify_url);
 
 const config = {
@@ -57,6 +55,6 @@ export default async function () {
     throw new Error('Failed to refresh AccessToken: getTokenFromRedirect returned empty');
   }
 
-  writeFileSync(new URL('./AccessToken.txt', import.meta.url), AccessToken.trim(), 'utf-8');
+  await Bun.write(new URL('./AccessToken.txt', import.meta.url), AccessToken.trim());
   return AccessToken.trim();
 }

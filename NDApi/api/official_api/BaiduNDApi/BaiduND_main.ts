@@ -1,14 +1,11 @@
 import getFileList from './getFileLists.ts';
 import getFileInfo from './getFileInfo.ts';
 import refreshAccessToken from './getAccessToken.ts';
-import fs from 'fs';
-import type { FileListItem, FileInfo } from './type.ts';
+import type { FileListItem } from './type.ts';
 
-function readLocalHeadersAndCookies() {
-  const BD_Headers: Record<string, string> = JSON.parse(
-    fs.readFileSync(new URL('./BD_Headers.json', import.meta.url), 'utf-8')
-  ) as Record<string, string>;
-  const BD_Cookies = fs.readFileSync(new URL('./cookies.txt', import.meta.url), 'utf-8');
+async function readLocalHeadersAndCookies() {
+  const BD_Headers: Record<string, string> = await Bun.file(new URL('./BD_Headers.json', import.meta.url)).json()
+  const BD_Cookies = await Bun.file(new URL('./cookies.txt', import.meta.url)).text();
   BD_Headers['cookie'] = BD_Cookies;
   // Read the Cookies and Headers from the local files
   return BD_Headers;
@@ -55,15 +52,15 @@ export async function getDirectLink(FileList: FileListItem[]) {
   console.log('File ids', fileIdList);
   if (fileIdList.length === 0) return [];
 
-  const BD_Headers = readLocalHeadersAndCookies();
-  let AccessToken = fs.readFileSync(new URL('./AccessToken.txt', import.meta.url), 'utf-8');
+  const BD_Headers = await readLocalHeadersAndCookies();
+  let AccessToken = await Bun.file(new URL('./AccessToken.txt', import.meta.url)).text();
 
   try {
     return await getFileInfo(AccessToken, BD_Headers, fileIdList);
   } catch (error) {
-    if ((error as Error).message !== 'InvalidAccessTokenError') throw error; // 别吞
+    if ((error as Error).message !== 'InvalidAccessTokenError') throw error;
     AccessToken = await refreshAccessToken();
     console.log('Access Token is refreshed.');
-    return await getFileInfo(AccessToken, BD_Headers, fileIdList);          // 失败会正常冒泡
+    return await getFileInfo(AccessToken, BD_Headers, fileIdList);
   }
 }

@@ -2,71 +2,46 @@ package main
 
 import (
 	"MultiThreadDownloader/src/core"
+	"MultiThreadDownloader/src/core/netdisk"
 	"MultiThreadDownloader/src/lib"
+	"MultiThreadDownloader/src/lib/fetchApi"
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 )
 
-type Interval struct {
-	st int
-	ed int
-}
 
+var maxThread = 15
+var chunkSize = 160 * 1024
+var ND_Path = "/我的资源/爱言叶5动态素材包" // root path : "/" 
+var platform = "BaiduNetdisk"
+var RetryTimeInterval = 3 * time.Second
+// For TEST, it will be post by frontend, but now we just hardcode it here.
 
-func ChunksIndex(total_size int, chunk_size int) []Interval {
-	var result []Interval
-	for st_byte := 0; st_byte <= total_size; st_byte += chunk_size {
-		ed_byte := st_byte + chunk_size - 1
-		if ed_byte > total_size {
-			ed_byte = total_size - 1 // first is 0, last is total_size - 1
-		}
-		result = append(result, Interval{
-			// no: (st - 1) / step,
-			st: st_byte,
-			ed: ed_byte,
-		})
-	}
-	// fmt.Println(result)
-	return result
-}
-
-func bd_str_chunk_index_for(intervals []Interval) []string {
-	result := make([]string, 0, len(intervals))
-	for i := range intervals {
-		Range := fmt.Sprintf("bytes=%d-%d", intervals[i].st, intervals[i].ed)
-		result = append(result, Range)
-	}
-	// fmt.Println(result)
-	return result
-}
 
 func main() {
-	maxThread := 15
-	chunkSize := 512 * 1024
-	ND_Path := "/"
-	platform := "BaiduNetdisk"
-	// For TEST
-
-	File_FolderList, err := core.GetFileList(ND_Path, platform)
+	File_FolderList, err := fetchApi.GetFileList(ND_Path, platform)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return 
 	}
 	fmt.Println(File_FolderList) // For TEST
 
-	fileList := File_FolderList.FileList // For TEST : Get all infomation in the list
+	fileList := File_FolderList.FileList // Get all infomation in the list
 
-	file_info_with_url, err := core.GetFileInfo(fileList, platform)
+	file_info_with_url, err := fetchApi.GetFileInfo(fileList, platform)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
 	}
 	fmt.Println(file_info_with_url) // For TEST
-	info0 := file_info_with_url[0] // For TEST : Get one file randomly
+	info0 := file_info_with_url[2] // For TEST : Get one file randomly
 	url := info0.Dlink // For TEST : Get one file randomly
 	totalSize := info0.Size // For TEST : Get one file randomly
 	filename := info0.Filename // For TEST : Get one file randomly
+	// they will be post by frontend, but now we just hardcode it here.
+	
 	fmt.Printf("total size: %d bytes\n", totalSize)
 	fmt.Printf("filename: %s\n", filename)
 
@@ -81,23 +56,28 @@ func main() {
 		return
 	}
 
-	// Get Latency
-	response, err := lib.NetRequest("https://d.pcs.baidu.com/", "GET", headers, nil, 30)
+	response, err := core.NetRequest("https://d.pcs.baidu.com/", "GET", headers, nil, 30) // Get Latency
 	if err != nil {
-		fmt.Printf("get Latency error: %v\n", err)
+		fmt.Printf("get Latency error, try to check your internet: %v\n", err)
 		return
 	}
 	fmt.Printf("Latency: %d ms\n", response.ReqElapsed / 1000000)
-	// Get Latency End
 
-	str_range := bd_str_chunk_index_for(ChunksIndex(totalSize, chunkSize))
+	chunk_range := netdisk.BaiduNetdiskChunkRangeInit(core.InitChunksIndex(totalSize, chunkSize))
 	// fmt.Println(chunk)
-	length := len(str_range)
-	fmt.Printf("total chunk: %d\n", length)
+	chunk_range_len := len(chunk_range)
+	fmt.Printf("total chunk number: %d\n", chunk_range_len)
 
-	err = core.MultiTGet(url, headers, maxThread, 5, str_range)
+	f, err := lib.CreatePlaceholderFile("./download/" + filename, totalSize) // create file to write
 	if err != nil {
-		fmt.Printf("multi-threaded download error: %v\n", err)
+		fmt.Printf("create placeholder file error: %v\n", err)
+		return
+	}
+	fmt.Printf("placeholder file created successfully: %s\n", f.F.Name())
+
+	ok, errs := lib.MultiTGet(url, chunk_range, lib.MultiGetConfig{WriteTo: *f, RetryTimeInterval: RetryTimeInterval, MaxRetry: 2, MaxThread: maxThread, Headers: headers, SingleChunkTimeout: 5})
+	if len(errs) == 0 && ok != true {
+		fmt.Printf("multi threaded download error: %v\n", err)
 		return
 	}
 }
