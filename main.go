@@ -12,11 +12,12 @@ import (
 )
 
 
-var maxThread = 15
+var maxDownloadThread = 15
 var chunkSize = 160 * 1024
 var ND_Path = "/我的资源/爱言叶5动态素材包" // root path : "/" 
 var platform = "BaiduNetdisk"
 var RetryTimeInterval = 3 * time.Second
+var maxWritingThread = 15
 // For TEST, it will be post by frontend, but now we just hardcode it here.
 
 
@@ -75,7 +76,7 @@ func main() {
 	}
 	fmt.Printf("placeholder file created successfully: %s\n", f.F.Name())
 
-	ok, errs := lib.MultiTGet(url, chunk_range, lib.MultiGetConfig{WriteTo: *f, RetryTimeInterval: RetryTimeInterval, MaxRetry: 2, MaxThread: maxThread, Headers: headers, SingleChunkTimeout: 5})
+	ok, errs := lib.MultiTGet(url, chunk_range, lib.MultiGetConfig{WriteTo: *f, RetryTimeInterval: RetryTimeInterval, MaxRetry: 2, MaxDownloadThread: maxDownloadThread, MaxWritingThread: maxWritingThread, Headers: headers, SingleChunkTimeout: 5})
 	if len(errs) == 0 && ok != true {
 		fmt.Printf("multi threaded download error: %v\n", err)
 		return

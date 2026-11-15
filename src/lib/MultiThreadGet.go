@@ -1,3 +1,5 @@
+// TODO: Add a 'if success' to CHUNK_Range to check that if all chunk can be downloaded successfully
+
 package lib
 
 import (
@@ -17,7 +19,8 @@ type MultiGetConfig struct {
 	WriteTo            FixedSizeFile
 	RetryTimeInterval  time.Duration
 	MaxRetry           int
-	MaxThread 		   int
+	MaxDownloadThread  int
+	MaxWritingThread   int
 	Headers            map[string]string
 	SingleChunkTimeout int
 }
@@ -29,45 +32,94 @@ type Writer struct {
 
 func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) (bool, []error) { // cnk is the chunk of the file
 	var success_multiget bool
+	var errs []error
 	start := time.Now()
-	var wg sync.WaitGroup
+	var downloadWG sync.WaitGroup
+	var initWG sync.WaitGroup
 	var writerWG sync.WaitGroup
-	c := make(chan core.CHUNK_Range, 5)
-	wr := make(chan Writer)
-	errChan := make(chan error, config.MaxThread) // Channel to capture errors
+	var errCollectionWG sync.WaitGroup
+	c := make(chan core.CHUNK_Range, config.MaxDownloadThread * 3) // Channel to post the chunk info to the download gorouting
+	wr := make(chan Writer, config.MaxWritingThread * 3) // Channel to writting data into disk
+	writtingErrChan := make(chan error, config.MaxWritingThread) // Channel to collect if all data can be saved successfully
+	errChan := make(chan error, config.MaxDownloadThread * 3) // Channel to capture errors
 
-	wg.Add(1)
-	go func() {
-		for _, chunk := range cnk {
-			c <- chunk
-		}
-		wg.Done()
-		close(c)
-	}()
-
-	writerWG.Add(1)
-	go func() {
-		defer writerWG.Done()
+	errCollectionWG.Add(1)
+	go func(){
+		defer errCollectionWG.Done()
 		for {
-			writer, open := <- wr
+			each_err, open := <- errChan
 			if !open {
 				break
 			}
-			fmt.Printf("writer header: %v\n", writer.chunk)
-			if err := config.WriteTo.WritePlaceholder(writer.chunk, writer.data); err != nil {
-				errChan <- err
-				fmt.Println("! Failed in writing the chunk in the Storange.")
+			if each_err != nil {
+				errs = append(errs, each_err)
 			}
-			continue
 		}
-		success_multiget = true
-		fmt.Println("Done: MultiThreadGet")
 	}()
 
-	for i := 0; i < config.MaxThread; i++ {
-		wg.Add(1)
+	initWG.Add(1)
+	go func() {
+		defer initWG.Done()
+		for _, chunk := range cnk {
+			c <- chunk
+		}
+		close(c)
+	}()
+
+	writerWG.Add(1) // load the writers
+	func() {
 		go func() {
-			defer wg.Done()
+			defer writerWG.Done()
+			for i := 0; i < config.MaxWritingThread; i++ {	// writing data into local disk
+				writerWG.Add(1)
+				go func() {
+					defer writerWG.Done()
+					for {
+						writer, open := <- wr
+						if !open {
+							break
+						}
+						fmt.Printf("writer header: %v\n", writer.chunk)
+						if err := config.WriteTo.WritePlaceholder(writer.chunk, writer.data); err != nil {
+							writtingErrChan <- err
+							fmt.Println("! Failed in writing the chunk in the Storange.")
+						}
+						continue	
+					}
+				}()
+			}
+		}() // All writerWG end
+		
+		var WrittingErrors []error
+		initWG.Add(1)
+		go func() {
+			defer initWG.Done()
+			for {
+				eachWrittingError, open := <- writtingErrChan
+				if !open {
+					break
+				}
+				WrittingErrors = append(WrittingErrors, eachWrittingError)
+			}
+			if len(WrittingErrors) == 0 {
+				success_multiget = true // Tempory
+				fmt.Println("Done: MultiThreadGet")
+				close(errChan)
+			} else {
+				success_multiget = false // Tempory
+				for _, eachErr := range WrittingErrors {
+					errChan <- eachErr
+				}
+				close(errChan)
+			}
+		}()
+	}()
+
+
+	for i := 0; i < config.MaxDownloadThread; i++ {
+		downloadWG.Add(1)
+		go func() {
+			defer downloadWG.Done()
 			reqheader := make(map[string]string, len(config.Headers))
 			for k, v := range config.Headers {
 				reqheader[k] = v
@@ -75,27 +127,32 @@ func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) (bool,
 			for chunk := range c {
 				retries := 0
 				for {
+					var incorrect_bite_number bool
 					reqheader["Range"] = chunk.Header
 					resp, err := core.NetRequest(url, "GET", reqheader, nil, config.SingleChunkTimeout)
-					var correct_bite_number bool
-					if len(resp.RespBody) != chunk.Ed - chunk.St + 1 {
-						fmt.Printf("! Not Correct byte number: chunk %v\n, Expected %v, Got %v\n", chunk.Header, chunk.Ed - chunk.St + 1, len(resp.RespBody))
-						fmt.Printf("! ! resp body: %v\n resp end", resp.RespBody)
-						correct_bite_number = true
+					if err != nil {
+						fmt.Println("downloading error: ", err)
+						errChan <- err // only for test, it can't do anything
 					} else {
-						fmt.Printf("Correct byte number: chunk %v\n", chunk.Header)
-						// config.WriteTo.WritePlaceholder(chunk, resp.RespBody)
-						wr <- Writer{chunk: chunk, data: resp.RespBody}
-					}
+						if len(resp.RespBody) != chunk.Ed - chunk.St + 1 {
+							fmt.Printf("! Not Correct byte number: chunk %v\n, Expected %v, Got %v\n", chunk.Header, chunk.Ed - chunk.St + 1, len(resp.RespBody))
+							fmt.Printf("! ! resp body: %v\n resp end", resp.RespBody)
+							incorrect_bite_number = true
+						} else {
+							fmt.Printf("Correct byte number: chunk %v\n", chunk.Header)
+							// config.WriteTo.WritePlaceholder(chunk, resp.RespBody)
+							wr <- Writer{chunk: chunk, data: resp.RespBody}
+						}
+					}	
 					retries++
 					if retries < config.MaxRetry + 1 {
-						if errors.Is(err, core.ErrorRequestTimeout) || correct_bite_number {
+						if errors.Is(err, core.ErrorRequestTimeout) || incorrect_bite_number {
 							fmt.Printf("Retry %v : Request Timeout(chunk %v), Retry after 1s\n", retries, chunk.Header)
 							time.Sleep(config.RetryTimeInterval)
 							continue
 						}else if err != nil {
+							fmt.Println("download error:", err)
 							errChan <- fmt.Errorf("download error: %w", err)
-							return
 						}
 					} else {
 						errChan <- fmt.Errorf("Too many retries: %v", config.MaxRetry)
@@ -107,23 +164,16 @@ func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) (bool,
 	}
 
 	go func() {
-		wg.Wait()
+		downloadWG.Wait()
 		close(wr)
 	}()
-
-	wg.Wait()
-	writerWG.Wait()
-	close(errChan)
+	go func() {
+		writerWG.Wait()
+		close(writtingErrChan)
+	}()
+	initWG.Wait()
+	errCollectionWG.Wait()
 	fmt.Println("MultiThreaD elapsed time:", time.Since(start))
-	var err []error
-	for {
-		each_err, open := <- errChan
-		if !open {
-			break
-		}
-		if each_err != nil {
-			err = append(err, each_err)
-		}
-	}
-	return success_multiget, err
+	
+	return success_multiget, errs
 }
