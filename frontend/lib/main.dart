@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'dart:async';
 
@@ -24,7 +24,6 @@ class MyApp extends StatelessWidget {
       darkTheme: ThemeData(
         brightness: Brightness.dark,
         colorScheme: darkScheme,
-        useMaterial3: true,
         scaffoldBackgroundColor: darkScheme.surface,
         appBarTheme: AppBarTheme(
           backgroundColor: darkScheme.surface,
