@@ -10,10 +10,6 @@ import (
 	"time"
 )
 
-func downloadpcs(c string) {
-	time.Sleep(1 * time.Second)
-	fmt.Println("Done: ", c)
-}
 
 type MultiGetConfig struct {
 	WriteTo            FixedSizeFile
@@ -132,7 +128,6 @@ func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) (bool,
 					resp, err := core.NetRequest(url, "GET", reqheader, nil, config.SingleChunkTimeout)
 					if err != nil {
 						fmt.Println("downloading error: ", err)
-						errChan <- err // only for test, it can't do anything
 					} else {
 						if len(resp.RespBody) != chunk.Ed - chunk.St + 1 {
 							fmt.Printf("! Not Correct byte number: chunk %v\n, Expected %v, Got %v\n", chunk.Header, chunk.Ed - chunk.St + 1, len(resp.RespBody))
