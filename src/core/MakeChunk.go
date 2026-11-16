@@ -9,10 +9,7 @@ type CHUNK_Range struct {
 
 func InitChunksIndex(total_size int, chunk_size int) []CHUNK_Range {
 	var result []CHUNK_Range
-	for st_byte := 0; st_byte <= total_size; st_byte += chunk_size {
-		if st_byte == chunk_size {
-			break
-		}
+	for st_byte := 0; st_byte < total_size; st_byte += chunk_size {
 		ed_byte := st_byte + chunk_size - 1
 		if ed_byte > total_size {
 			ed_byte = total_size - 1 // first is 0, last is total_size - 1

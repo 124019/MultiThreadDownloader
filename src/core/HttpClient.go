@@ -14,16 +14,14 @@ var sharedTransport = &http.Transport{
         KeepAlive: 30 * time.Second,
     }).DialContext,
     ForceAttemptHTTP2:     true,
-    MaxIdleConns:          200,         // 全局最大空闲连接
-    MaxIdleConnsPerHost:   100,         // ⭐ 关键：默认是 2，必须改大
+    MaxIdleConns:          200,
+    MaxIdleConnsPerHost:   50,
     IdleConnTimeout:       90 * time.Second,
     TLSHandshakeTimeout:   10 * time.Second,
     ExpectContinueTimeout: 1  * time.Second,
-    ResponseHeaderTimeout: 20 * time.Second, // 单独限制"等响应头"的时间
+    ResponseHeaderTimeout: 20 * time.Second,
 }
 
 var SharedHTTPClient = &http.Client{
     Transport: sharedTransport,
-    // ⚠️ 注意：这里不要设 Timeout。用 Transport 的各个细分超时来管，
-    // 否则又会变成"整个请求 5 秒"
 }
