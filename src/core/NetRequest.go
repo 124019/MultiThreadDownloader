@@ -46,9 +46,6 @@ func NetRequest(url string, method string, headers map[string]string, post_data 
 		default:
 			return NetResp{}, fmt.Errorf("unsupported method: %s", method)
 	}
-	client := &http.Client{
-		Timeout: time.Duration(timeout_second) * time.Second,
-	}
 
 	req, err := http.NewRequest(method, url, data)
 	if err != nil {
@@ -61,7 +58,7 @@ func NetRequest(url string, method string, headers map[string]string, post_data 
 
 	var StatusCode int
 	start := time.Now()
-	resp, err := client.Do(req)
+	resp, err := SharedHTTPClient.Do(req)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			return NetResp{ReqElapsed: time.Since(start)}, fmt.Errorf("%w: after %v (timeout=%d):%w", ErrorRequestTimeout, time.Since(start), timeout_second, err)
