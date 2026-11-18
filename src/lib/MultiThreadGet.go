@@ -31,12 +31,12 @@ func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) (bool,
 	var errs []error
 	start := time.Now()
 	var downloadWG sync.WaitGroup
-	var initWG sync.WaitGroup
+	var initWG sync.WaitGroup // For errors and load chunks
 	var writerWG sync.WaitGroup
 	var errCollectionWG sync.WaitGroup
-	c := make(chan core.CHUNK_Range, config.MaxDownloadThread * 3) // Channel to post the chunk info to the download gorouting
+	c := make(chan core.CHUNK_Range, config.MaxDownloadThread * 3) // Channel to post the chunk info to the download goroutine
 	wr := make(chan Writer, config.MaxWritingThread * 3) // Channel to writting data into disk
-	writtingErrChan := make(chan error, config.MaxWritingThread) // Channel to collect if all data can be saved successfully
+	writtingErrChan := make(chan error, config.MaxWritingThread * 3) // Channel to collect if all data can be saved successfully
 	errChan := make(chan error, config.MaxDownloadThread * 3) // Channel to capture errors
 
 	errCollectionWG.Add(1)
@@ -64,31 +64,11 @@ func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) (bool,
 
 	writerWG.Add(1) // load the writers
 	func() {
-		go func() {
-			defer writerWG.Done()
-			for i := 0; i < config.MaxWritingThread; i++ {	// writing data into local disk
-				writerWG.Add(1)
-				go func() {
-					defer writerWG.Done()
-					for {
-						writer, open := <- wr
-						if !open {
-							break
-						}
-						fmt.Printf("writer header: %v\n", writer.chunk)
-						if err := config.WriteTo.WritePlaceholder(writer.chunk, writer.data); err != nil {
-							writtingErrChan <- err
-							fmt.Println("! Failed in writing the chunk in the Storange.")
-						}
-						continue	
-					}
-				}()
-			}
-		}() // All writerWG end
+		defer writerWG.Done()
 		
-		var WrittingErrors []error
+		var WrittingErrors []error // Catch Writting Error
 		initWG.Add(1)
-		go func() {
+		go func() { // Catch Writting Error
 			defer initWG.Done()
 			for {
 				eachWrittingError, open := <- writtingErrChan
@@ -99,7 +79,7 @@ func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) (bool,
 			}
 			if len(WrittingErrors) == 0 {
 				success_multiget = true // Tempory
-				fmt.Println("Done: MultiThreadGet")
+				fmt.Printf("Done: MultiThreadGet\n")
 				close(errChan)
 			} else {
 				success_multiget = false // Tempory
@@ -109,17 +89,41 @@ func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) (bool,
 				close(errChan)
 			}
 		}()
+
+		for i := 0; i < config.MaxWritingThread; i++ {	// writing data into local disk
+			writerWG.Add(1)
+			writer_goroutine_number := i
+			go func() {
+				defer writerWG.Done()
+				for {
+					writer, open := <- wr
+					if !open {
+						break
+					}
+					fmt.Printf("WrGoroutine %v : Writing-> chunk header: %v\n", writer_goroutine_number, writer.chunk)
+					if err := config.WriteTo.WritePlaceholder(writer.chunk, writer.data); err != nil {
+						writtingErrChan <- err
+						fmt.Printf("! WrGoroutine %v : Failed in writing the chunk in the Storange. (chunk number: %v)\n", writer_goroutine_number, writer.chunk.No)
+					} else {
+						fmt.Printf("WrGoroutine %v Writing success: %v\n", writer_goroutine_number, writer.chunk)
+					}
+					continue
+				}
+			}()
+		}
 	}()
 
 
-	for i := 0; i < config.MaxDownloadThread; i++ {
+	for i := 0; i < config.MaxDownloadThread; i++ { // Start Downloading
 		downloadWG.Add(1)
 		go func() {
+			goroutine_number := i
 			defer downloadWG.Done()
 			reqheader := make(map[string]string, len(config.Headers))
 			for k, v := range config.Headers {
 				reqheader[k] = v
 			}
+			fmt.Printf("Start Downloading: %v\n" , time.Since(start))
 			for chunk := range c {
 				retries := 0
 				for {
@@ -127,30 +131,32 @@ func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) (bool,
 					reqheader["Range"] = chunk.Header
 					resp, err := core.NetRequest(url, "GET", reqheader, nil, config.SingleChunkTimeout)
 					if err != nil {
-						fmt.Println("downloading error: ", err)
+						fmt.Printf("Goroutine %v: downloading error: %v\n", goroutine_number, err)
 					} else {
 						if len(resp.RespBody) != chunk.Ed - chunk.St + 1 {
-							fmt.Printf("! Not Correct byte number: chunk %v\n, Expected %v, Got %v\n", chunk.Header, chunk.Ed - chunk.St + 1, len(resp.RespBody))
-							fmt.Printf("! ! resp body: %v\n resp end", resp.RespBody)
+							fmt.Printf("! Goroutine %v: Not Correct byte number: chunk %v, Expected %v, Got %v\n! ! Detail: resp body: \n%v resp end (After Started: %v)\n", goroutine_number, chunk.No, chunk.Ed - chunk.St + 1, len(resp.RespBody), resp.RespBody, time.Since(start))
 							incorrect_bite_number = true
 						} else {
-							fmt.Printf("Correct byte number: chunk %v\n", chunk.Header)
+							fmt.Printf("Goroutine %v: Correct byte number: chunk %v(After Started: %v)\n", goroutine_number, chunk.No, time.Since(start))
 							// config.WriteTo.WritePlaceholder(chunk, resp.RespBody)
 							wr <- Writer{chunk: chunk, data: resp.RespBody}
+							// TODO : return that the chunk is finished
+							break // Break this loop to get another chunk
 						}
 					}	
 					retries++
 					if retries < config.MaxRetry + 1 {
 						if errors.Is(err, core.ErrorRequestTimeout) || incorrect_bite_number {
-							fmt.Printf("Retry %v : Request Timeout(chunk %v), Retry after 1s\n", retries, chunk.Header)
+							fmt.Printf("! Goroutine %v: (Chunk: %v) Retry %v : Request Timeout(chunk %v), Retry after 1s\n", goroutine_number, chunk.No, retries, chunk.Header)
 							time.Sleep(config.RetryTimeInterval)
-							continue
+							continue // To Retry
 						}else if err != nil {
-							fmt.Println("download error:", err)
-							errChan <- fmt.Errorf("download error: %w", err)
+							fmt.Printf("! Goroutine %v: (Chunk: %v) download error: %v\n", goroutine_number, chunk.No, err)
+							errChan <- fmt.Errorf("! Goroutine %v: (Chunk: %v) download error: %w", goroutine_number, chunk.No, err)
+							continue // To Retry
 						}
 					} else {
-						errChan <- fmt.Errorf("Too many retries: %v", config.MaxRetry)
+						errChan <- fmt.Errorf("! Goroutine %v: (Chunk: %v) Too many retries: %v\n", goroutine_number, chunk.No, config.MaxRetry)
 					}
 					break
 				}
