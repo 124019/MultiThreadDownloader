@@ -31,17 +31,21 @@ func main() {
 
 	fileList := File_FolderList.FileList // Get all infomation in the list
 
+	// Post fileList to frontend
+	var select_file_list []fetchApi.FileListItem
+	select_file_list = append(select_file_list, fileList[2]) // Responsed from frontend
+	fmt.Printf("select_file_list: %v", select_file_list)
+
 	file_info_with_url, err := fetchApi.GetFileInfo(fileList, platform)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
 	}
-	fmt.Println(file_info_with_url) // For TEST
-	info0 := file_info_with_url[2] // For TEST : Get one file randomly
-	url := info0.Dlink // For TEST : Get one file randomly
-	totalSize := info0.Size // For TEST : Get one file randomly
-	filename := info0.Filename // For TEST : Get one file randomly
-	// they will be post by frontend, but now we just hardcode it here.
+	fmt.Println(file_info_with_url)
+	info0 := file_info_with_url[0] // Should get all info, but now ignore it tempory to develop other method.
+	url := info0.Dlink
+	totalSize := info0.Size
+	filename := info0.Filename
 	
 	fmt.Printf("total size: %d bytes\n", totalSize)
 	fmt.Printf("filename: %s\n", filename)
