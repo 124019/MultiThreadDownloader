@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"sync"
 	"time"
+	"math/rand"
 )
 
 
@@ -100,12 +101,12 @@ func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) (bool,
 					if !open {
 						break
 					}
-					fmt.Printf("WrGoroutine %v : Writing-> chunk header: %v\n", writer_goroutine_number, writer.chunk)
+					fmt.Printf("WrGoroutine %v : Writing-> chunk: %v\n", writer_goroutine_number, writer.chunk.No)
 					if err := config.WriteTo.WritePlaceholder(writer.chunk, writer.data); err != nil {
 						writtingErrChan <- err
 						fmt.Printf("! WrGoroutine %v : Failed in writing the chunk in the Storange. (chunk number: %v)\n", writer_goroutine_number, writer.chunk.No)
 					} else {
-						fmt.Printf("WrGoroutine %v Writing success: %v\n", writer_goroutine_number, writer.chunk)
+						fmt.Printf("WrGoroutine %v Writing success, chunk: %v\n", writer_goroutine_number, writer.chunk.No)
 					}
 					continue
 				}
@@ -125,6 +126,7 @@ func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) (bool,
 			}
 			fmt.Printf("Start Downloading: %v\n" , time.Since(start))
 			for chunk := range c {
+				start_chunk := time.Now()
 				retries := 0
 				for {
 					var incorrect_bite_number bool
@@ -133,15 +135,15 @@ func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) (bool,
 					if err != nil {
 						fmt.Printf("Goroutine %v: downloading error: %v\n", goroutine_number, err)
 					} else {
-						if len(resp.RespBody) != chunk.Ed - chunk.St + 1 {
-							fmt.Printf("! Goroutine %v: Not Correct byte number: chunk %v, Expected %v, Got %v\n! ! Detail: resp body: \n%v resp end (After Started: %v)\n", goroutine_number, chunk.No, chunk.Ed - chunk.St + 1, len(resp.RespBody), resp.RespBody, time.Since(start))
-							incorrect_bite_number = true
-						} else {
-							fmt.Printf("Goroutine %v: Correct byte number: chunk %v(After Started: %v)\n", goroutine_number, chunk.No, time.Since(start))
+						if len(resp.RespBody) == chunk.Ed - chunk.St + 1 {
+							fmt.Printf("Goroutine %v: Correct byte number: chunk %v(After Started: %v, This chunk: %v)\n", goroutine_number, chunk.No, time.Since(start), time.Since(start_chunk))
 							// config.WriteTo.WritePlaceholder(chunk, resp.RespBody)
 							wr <- Writer{chunk: chunk, data: resp.RespBody}
 							// TODO : return that the chunk is finished
 							break // Break this loop to get another chunk
+						} else {
+							fmt.Printf("! Goroutine %v: Not Correct byte number: chunk %v, Expected %v, Got %v\n! ! Detail: resp body: \n%v resp body end (After Started: %v)\n", goroutine_number, chunk.No, chunk.Ed - chunk.St + 1, len(resp.RespBody), resp.RespBody, time.Since(start))
+							incorrect_bite_number = true
 						}
 					}	
 					retries++
@@ -151,8 +153,8 @@ func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) (bool,
 							time.Sleep(config.RetryTimeInterval)
 							continue // To Retry
 						}else if err != nil {
-							fmt.Printf("! Goroutine %v: (Chunk: %v) download error: %v\n", goroutine_number, chunk.No, err)
-							errChan <- fmt.Errorf("! Goroutine %v: (Chunk: %v) download error: %w", goroutine_number, chunk.No, err)
+							fmt.Printf("! Goroutine %v: (Chunk: %v) (After Started: %v) download error: %v\n! ! Details: Status: %v,Return %v bytes, Header: %v, Elapsed: %v\n", goroutine_number, chunk.No, time.Since(start), err, resp.RespStatusCode, len(resp.RespBody), resp.RespHeader, resp.ReqElapsed)
+							errChan <- fmt.Errorf("! Goroutine %v: (Chunk: %v) (After Started: %v) download error: %w", goroutine_number, chunk.No, time.Since(start), err)
 							continue // To Retry
 						}
 					} else {
@@ -162,6 +164,7 @@ func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) (bool,
 				}
 			}
 		}()
+		time.Sleep(time.Duration(rand.Intn(500) + 500) * time.Millisecond)
 	}
 
 	go func() {

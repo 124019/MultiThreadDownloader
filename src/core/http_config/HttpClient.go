@@ -1,5 +1,4 @@
-// core/HttpClient.go
-package core
+package http_config
 
 import (
     "net"
@@ -10,14 +9,14 @@ import (
 var sharedTransport = &http.Transport{
     Proxy: http.ProxyFromEnvironment,
     DialContext: (&net.Dialer{
-        Timeout:   15 * time.Second,
+        Timeout:   5 * time.Second,
         KeepAlive: 30 * time.Second,
     }).DialContext,
     ForceAttemptHTTP2:     true,
     MaxIdleConns:          200,
     MaxIdleConnsPerHost:   50,
     IdleConnTimeout:       90 * time.Second,
-    TLSHandshakeTimeout:   10 * time.Second,
+    TLSHandshakeTimeout:   5 * time.Second,
     ExpectContinueTimeout: 1  * time.Second,
     ResponseHeaderTimeout: 20 * time.Second,
 }

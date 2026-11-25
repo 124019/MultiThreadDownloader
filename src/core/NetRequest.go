@@ -11,6 +11,7 @@ import (
 	"context"
 	"os"
 	"net"
+	"MultiThreadDownloader/src/core/http_config"
 )
 
 type NetResp struct {
@@ -58,7 +59,7 @@ func NetRequest(url string, method string, headers map[string]string, post_data 
 
 	var StatusCode int
 	start := time.Now()
-	resp, err := SharedHTTPClient.Do(req)
+	resp, err := http_config.SharedHTTPClient.Do(req)
 	if err != nil {
 		if errors.Is(err, context.DeadlineExceeded) {
 			return NetResp{ReqElapsed: time.Since(start)}, fmt.Errorf("%w: after %v (timeout=%d):%w", ErrorRequestTimeout, time.Since(start), timeout_second, err)
@@ -75,19 +76,19 @@ func NetRequest(url string, method string, headers map[string]string, post_data 
 
 	if method == "HEAD" {
 		elapsed := time.Since(start)
-		fmt.Printf("Request took %v\n", elapsed)
+		// fmt.Printf("Request took %v\n", elapsed)
 		return NetResp{RespStatusCode: StatusCode, RespHeader: resp.Header, ReqElapsed: elapsed}, nil
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	header := resp.Header
 	elapsed := time.Since(start)
-	fmt.Printf("Request took %v\n", elapsed)
+	// fmt.Printf("Request took %v\n", elapsed)
 	if err != nil {
 		if isTimeout(err) {
 			return NetResp{RespBody: body, RespStatusCode: StatusCode, RespHeader: header, ReqElapsed: elapsed}, fmt.Errorf("%w: after %v (timeout=%d):%w", ErrorRequestTimeout, time.Since(start), timeout_second, err)
 		} else {
-			return NetResp{RespHeader: header, ReqElapsed: time.Since(start)}, fmt.Errorf("Read Body Error: %w", err)
+			return NetResp{RespBody: body, RespStatusCode: StatusCode, RespHeader: header, ReqElapsed: time.Since(start)}, fmt.Errorf("Unknown Error: %w", err)
 		}
 	}
 	return NetResp{RespBody: body, RespStatusCode: StatusCode, RespHeader: header, ReqElapsed: elapsed}, nil

@@ -10,6 +10,7 @@ func BaiduNetdiskChunkRangeInit(intervals []core.CHUNK_Range) []core.CHUNK_Range
 		result = append(result, core.CHUNK_Range{
 			St: intervals[i].St,
 			Ed: intervals[i].Ed,
+			No: intervals[i].No,
 			Header: Range,
 		})
 	}
