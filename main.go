@@ -3,17 +3,17 @@
 package main
 
 import (
-	"MultiThreadDownloader/src/core"
-	"MultiThreadDownloader/src/core/netdisk"
-	"MultiThreadDownloader/src/lib"
+	"MultiThreadDownloader/downloader/core"
+	"MultiThreadDownloader/downloader/core/netdisk"
+	"MultiThreadDownloader/downloader/lib"
 	"encoding/json"
 	"os"
-	"MultiThreadDownloader/src/lib/fetchApi"
+	"MultiThreadDownloader/downloader/lib/fetchApi"
 	"fmt"
 	"time"
 )
 
-var maxDownloadThread = 4 // DO NOT MAKE IT TOO BIG, OR YOUR ACCOUNT MAY BE BANNED BY BAIDU.
+var maxDownloadThread = 2 // DO NOT MAKE IT TOO BIG, OR YOUR ACCOUNT MAY BE BANNED.
 var chunkSize = 256 * 1024
 var ND_Path = "/我的资源/爱言叶5动态素材包" // root path : "/" 
 var platform = "BaiduNetdisk"
@@ -74,7 +74,7 @@ func main() {
 	}
 	fmt.Printf("Latency: %d ms\n", response.ReqElapsed / 1000000)
 
-	chunk_range := netdisk.BaiduNetdiskChunkRangeInit(core.InitChunksIndex(totalSize, chunkSize))
+	chunk_range := netdisk.ChunkRangeInit(core.InitChunksIndex(totalSize, chunkSize))
 	// fmt.Println(chunk)
 	chunk_range_len := len(chunk_range)
 	fmt.Printf("total chunk number: %d\n", chunk_range_len)
@@ -86,7 +86,7 @@ func main() {
 	}
 	fmt.Printf("placeholder file created successfully: %s\n", f.F.Name())
 
-	ok, errs := lib.MultiTGet(url, chunk_range, lib.MultiGetConfig{WriteTo: *f, RetryTimeInterval: RetryTimeInterval, MaxRetry: 2, MaxDownloadThread: maxDownloadThread, MaxWritingThread: maxWritingThread, Headers: headers, SingleChunkTimeout: 5})
+	ok, errs := lib.MultiTGet(lib.Task{URL: url, Headers: headers, Chunks: chunk_range, WriteTo: *f}, lib.MultiTGetConfig{RetryTimeInterval: RetryTimeInterval, MaxRetry: 2, MaxDownloadThread: maxDownloadThread, MaxWritingThread: maxWritingThread, SingleChunkTimeout: 5, MaxConcurrentGet: 4})
 	if len(errs) != 0 || ok != true {
 		for _, e := range errs {
 			fmt.Printf("ERRORS\n=====\n %v\n", e)

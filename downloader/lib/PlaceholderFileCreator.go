@@ -3,7 +3,7 @@ package lib
 import (
 	"os"
 	"fmt"
-	"MultiThreadDownloader/src/core"
+	"MultiThreadDownloader/downloader/core"
 )
 
 type FixedSizeFile struct {

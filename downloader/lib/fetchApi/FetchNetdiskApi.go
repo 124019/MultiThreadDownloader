@@ -3,7 +3,7 @@ package fetchApi
 import (
 	"encoding/json"
 	"fmt"
-	"MultiThreadDownloader/src/core"
+	"MultiThreadDownloader/downloader/core"
 )
 
 type File_FolderList struct{

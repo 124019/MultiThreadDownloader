@@ -1,9 +1,9 @@
 package netdisk
 import (
-	"MultiThreadDownloader/src/core"
+	"MultiThreadDownloader/downloader/core"
 	"fmt"
 )
-func BaiduNetdiskChunkRangeInit(intervals []core.CHUNK_Range) []core.CHUNK_Range {
+func ChunkRangeInit(intervals []core.CHUNK_Range) []core.CHUNK_Range { // BaiduNetdisk is supported
 	var result []core.CHUNK_Range
 	for i := range intervals {
 		Range := fmt.Sprintf("bytes=%d-%d", intervals[i].St, intervals[i].Ed)

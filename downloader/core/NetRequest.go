@@ -11,7 +11,7 @@ import (
 	"context"
 	"os"
 	"net"
-	"MultiThreadDownloader/src/core/http_config"
+	"MultiThreadDownloader/downloader/core/http_config"
 )
 
 type NetResp struct {

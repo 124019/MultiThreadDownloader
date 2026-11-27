@@ -3,7 +3,7 @@
 package lib
 
 import (
-	"MultiThreadDownloader/src/core"
+	"MultiThreadDownloader/downloader/core"
 	"errors"
 	"fmt"
 	"sync"
@@ -12,22 +12,30 @@ import (
 )
 
 
-type MultiGetConfig struct {
-	WriteTo            FixedSizeFile
-	RetryTimeInterval  time.Duration
-	MaxRetry           int
-	MaxDownloadThread  int
-	MaxWritingThread   int
-	Headers            map[string]string
-	SingleChunkTimeout int
+type MultiTGetConfig struct {
+	SingleChunkTimeout  int
+	RetryTimeInterval   time.Duration
+	MaxDownloadThread   int
+	MaxWritingThread    int
+	MaxRetry            int
+	MaxConcurrentGet    int // Maximum number of files that can be downloaded simultaneously
 }
 
 type Writer struct {
-	chunk core.CHUNK_Range
-	data  []byte
+	chunk  core.CHUNK_Range
+	data   []byte
 }
 
-func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) (bool, []error) { // cnk is the chunk of the file
+type Task struct {
+	URL       string
+	Headers   map[string]string
+	Chunks    []core.CHUNK_Range
+	WriteTo   FixedSizeFile
+}
+
+func MultiTGet(task Task, config MultiTGetConfig) (bool, []error) {
+	
+	// Start Download Init
 	var success_multiget bool
 	var errs []error
 	start := time.Now()
@@ -57,7 +65,7 @@ func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) (bool,
 	initWG.Add(1)
 	go func() {
 		defer initWG.Done()
-		for _, chunk := range cnk {
+		for _, chunk := range task.Chunks {
 			c <- chunk
 		}
 		close(c)
@@ -102,7 +110,7 @@ func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) (bool,
 						break
 					}
 					fmt.Printf("WrGoroutine %v : Writing-> chunk: %v\n", writer_goroutine_number, writer.chunk.No)
-					if err := config.WriteTo.WritePlaceholder(writer.chunk, writer.data); err != nil {
+					if err := task.WriteTo.WritePlaceholder(writer.chunk, writer.data); err != nil {
 						writtingErrChan <- err
 						fmt.Printf("! WrGoroutine %v : Failed in writing the chunk in the Storange. (chunk number: %v)\n", writer_goroutine_number, writer.chunk.No)
 					} else {
@@ -120,8 +128,8 @@ func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) (bool,
 		go func() {
 			goroutine_number := i
 			defer downloadWG.Done()
-			reqheader := make(map[string]string, len(config.Headers))
-			for k, v := range config.Headers {
+			reqheader := make(map[string]string, len(task.Headers))
+			for k, v := range task.Headers {
 				reqheader[k] = v
 			}
 			fmt.Printf("Start Downloading: %v\n" , time.Since(start))
@@ -131,7 +139,7 @@ func MultiTGet(url string, cnk []core.CHUNK_Range, config MultiGetConfig) (bool,
 				for {
 					var incorrect_bite_number bool
 					reqheader["Range"] = chunk.Header
-					resp, err := core.NetRequest(url, "GET", reqheader, nil, config.SingleChunkTimeout)
+					resp, err := core.NetRequest(task.URL, "GET", reqheader, nil, config.SingleChunkTimeout)
 					if err != nil {
 						fmt.Printf("Goroutine %v: downloading error: %v\n", goroutine_number, err)
 					} else {
